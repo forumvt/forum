@@ -40,6 +40,9 @@ const formSchema = z
     email: z.email("E-mail inválido."),
     password: z.string("Senha inválida.").min(8, "Senha inválida."),
     passwordConfirmation: z.string("Senha inválida.").min(8, "Senha inválida."),
+    acceptTerms: z.boolean().refine((v) => v === true, {
+      message: "Você precisa aceitar os termos para continuar.",
+    }),
   })
   .refine(
     (data) => {
@@ -67,6 +70,7 @@ export function RegisterDialog() {
       email: "",
       password: "",
       passwordConfirmation: "",
+      acceptTerms: false,
     },
   });
 
@@ -236,19 +240,49 @@ export function RegisterDialog() {
               )}
             />
 
-            <div className="flex items-center gap-2">
-              <Checkbox id="tos" required />
-              <Label htmlFor="tos" className="text-sm font-normal">
-                Aceito os{" "}
-                {/* <Link href="/terms" className="underline">
-                  Termos
-                </Link>{" "}
-                e a{" "}
-                <Link href="/privacy" className="underline">
-                  Privacidade
-                </Link> */}
-              </Label>
-            </div>
+            <FormField
+              control={form.control}
+              name="acceptTerms"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-start gap-2">
+                    <FormControl>
+                      <Checkbox
+                        id="tos"
+                        checked={field.value}
+                        onCheckedChange={(c) => field.onChange(c === true)}
+                        className="mt-0.5"
+                      />
+                    </FormControl>
+                    <div className="grid gap-1.5 leading-snug">
+                      <Label
+                        htmlFor="tos"
+                        className="text-sm font-normal text-muted-foreground cursor-pointer"
+                      >
+                        Li e aceito os{" "}
+                        <Link
+                          href={"/terms" as never}
+                          className="text-primary underline-offset-4 hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Termos de Serviço
+                        </Link>{" "}
+                        e a{" "}
+                        <Link
+                          href={"/privacy" as never}
+                          className="text-primary underline-offset-4 hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Política de Privacidade
+                        </Link>
+                        .
+                      </Label>
+                      <FormMessage />
+                    </div>
+                  </div>
+                </FormItem>
+              )}
+            />
 
             <Button
               type="submit"
