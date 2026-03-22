@@ -11,6 +11,9 @@ import { db } from "@/db";
 import { forumTable } from "@/db/schema";
 import { ForumsListSkeleton } from "@/components/forums-list-skeleton";
 
+/** Evita pré-render estático no build sem acesso ao Postgres (ex.: CI sem DATABASE_URL). */
+export const dynamic = "force-dynamic";
+
 const categories: {
   value: "GAMING" | "POLITICA" | "VALE_TUDO";
   label: string;
