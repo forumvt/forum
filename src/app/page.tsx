@@ -112,7 +112,10 @@ async function HomeContent({
         </Link>
       </div>
 
-      <div className="flex flex-col gap-8 lg:flex-row">
+      <div
+        id="lista-topicos"
+        className="flex flex-col gap-8 scroll-mt-4 lg:flex-row"
+      >
         {threads.length === 0 ? (
           <div className="bg-muted/50 border-border rounded-lg border py-12 text-center">
             <div className="mb-4">
@@ -133,7 +136,8 @@ async function HomeContent({
             {threads.map((thread) => (
               <Card
                 key={thread.id}
-                className="chaos-card bg-card transition-all duration-300 hover:shadow-lg"
+                id={`topico-${thread.id}`}
+                className="chaos-card scroll-mt-6 bg-card transition-all duration-300 hover:shadow-lg"
               >
                 <div className="p-4 sm:p-6">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
