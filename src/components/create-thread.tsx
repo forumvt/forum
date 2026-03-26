@@ -2,15 +2,44 @@
 
 import { PlusIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { ForumListItem } from "@/types/forum";
 
+function scrollToCreatedThread(threadId: string) {
+  const elId = `topico-${threadId}`;
+  const deadline = Date.now() + 4000;
+
+  function tryScroll() {
+    const el = document.getElementById(elId);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el
+        .querySelector<HTMLAnchorElement>('a[href^="/threads/"]')
+        ?.focus({ preventScroll: true });
+      return;
+    }
+    if (Date.now() < deadline) {
+      requestAnimationFrame(tryScroll);
+      return;
+    }
+    document.getElementById("lista-topicos")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
+
+  requestAnimationFrame(tryScroll);
+}
+
 export function CreateThread({ forums }: { forums: ForumListItem[] }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const titleRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -32,7 +61,25 @@ export function CreateThread({ forums }: { forums: ForumListItem[] }) {
     if (!res.ok) {
       return;
     }
+
+    const created = (await res.json()) as { id?: string };
+    toast.success("Tópico criado com sucesso!");
+
+    if (titleRef.current) titleRef.current.value = "";
+    if (contentRef.current) contentRef.current.value = "";
+
     router.refresh();
+
+    if (created.id) {
+      scrollToCreatedThread(created.id);
+    } else {
+      requestAnimationFrame(() => {
+        document.getElementById("lista-topicos")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+    }
   }
   return (
     <>
@@ -71,6 +118,7 @@ export function CreateThread({ forums }: { forums: ForumListItem[] }) {
                 Título do tópico
               </label>
               <input
+                ref={titleRef}
                 type="text"
                 name="title"
                 className="w-full rounded border p-2"
@@ -82,6 +130,7 @@ export function CreateThread({ forums }: { forums: ForumListItem[] }) {
             <div>
               <label className="mb-1 block text-sm font-medium">Conteúdo</label>
               <textarea
+                ref={contentRef}
                 name="content"
                 rows={5}
                 className="w-full rounded border p-2"
