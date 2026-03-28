@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -30,31 +29,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
+import {
+  registerDialogFormSchema,
+  type RegisterDialogFormValues,
+} from "@/lib/register-schema";
 
-const formSchema = z
-  .object({
-    username: z
-      .string("Nome de usuario inválido.")
-      .trim()
-      .min(1, "Nome de usuario é obrigatório."),
-    email: z.email("E-mail inválido."),
-    password: z.string("Senha inválida.").min(8, "Senha inválida."),
-    passwordConfirmation: z.string("Senha inválida.").min(8, "Senha inválida."),
-    acceptTerms: z.boolean().refine((v) => v === true, {
-      message: "Você precisa aceitar os termos para continuar.",
-    }),
-  })
-  .refine(
-    (data) => {
-      return data.password === data.passwordConfirmation;
-    },
-    {
-      error: "As senhas não coincidem.",
-      path: ["passwordConfirmation"],
-    },
-  );
+const formSchema = registerDialogFormSchema;
 
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = RegisterDialogFormValues;
 export function RegisterDialog() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -75,8 +57,6 @@ export function RegisterDialog() {
   });
 
   async function onSubmit(values: FormValues) {
-    console.log(values);
-
     const { data, error } = await authClient.signUp.email({
       name: values.username,
       email: values.email,

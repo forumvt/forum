@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
-import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,25 +15,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { authClient } from "@/lib/auth-client"
+import {
+  registerFormBaseSchema,
+  type RegisterFormValues,
+} from "@/lib/register-schema"
 
-const formSchema = z
-  .object({
-    username: z.string("Nome de usuario inválido.").trim().min(1, "Nome de usuario é obrigatório."),
-    email: z.email("E-mail inválido."),
-    password: z.string("Senha inválida.").min(8, "Senha inválida."),
-    passwordConfirmation: z.string("Senha inválida.").min(8, "Senha inválida."),
-  })
-  .refine(
-    (data) => {
-      return data.password === data.passwordConfirmation;
-    },
-    {
-      error: "As senhas não coincidem.",
-      path: ["passwordConfirmation"],
-    },
-  );
+const formSchema = registerFormBaseSchema
 
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = RegisterFormValues
 
 export default function RegisterPage() {
   const router = useRouter();
