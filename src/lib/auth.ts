@@ -11,7 +11,7 @@ const authBaseUrl =
   process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "";
 
 const DEFAULT_USER_IMAGE =
-  "https://www.vtforums.com.br/eris-apple.png";
+  "https://www.subeiros.com/eris-apple.png";
 
 export const auth = betterAuth({
   baseURL: authBaseUrl || undefined,

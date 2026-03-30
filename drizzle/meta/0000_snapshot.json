@@ -582,7 +582,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false,
-          "default": "'https://www.vtforums.com.br/eris-apple.png'"
+          "default": "'https://www.subeiros.com/eris-apple.png'"
         },
         "role": {
           "name": "role",

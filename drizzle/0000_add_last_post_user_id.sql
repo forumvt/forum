@@ -76,7 +76,7 @@ CREATE TABLE "user" (
 	"name" text NOT NULL,
 	"email" text NOT NULL,
 	"email_verified" boolean NOT NULL,
-	"image" text DEFAULT 'https://www.vtforums.com.br/eris-apple.png',
+	"image" text DEFAULT 'https://www.subeiros.com/eris-apple.png',
 	"role" "role" DEFAULT 'USER' NOT NULL,
 	"created_at" timestamp NOT NULL,
 	"updated_at" timestamp NOT NULL,
