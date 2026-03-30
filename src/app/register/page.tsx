@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
-import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,31 +15,22 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { authClient } from "@/lib/auth-client"
+import { getPublicAppUrl } from "@/lib/app-url"
+import {
+  registerFormBaseSchema,
+  type RegisterFormValues,
+} from "@/lib/register-schema"
 
-const formSchema = z
-  .object({
-    username: z.string("Nome de usuario inválido.").trim().min(1, "Nome de usuario é obrigatório."),
-    email: z.email("E-mail inválido."),
-    password: z.string("Senha inválida.").min(8, "Senha inválida."),
-    passwordConfirmation: z.string("Senha inválida.").min(8, "Senha inválida."),
-  })
-  .refine(
-    (data) => {
-      return data.password === data.passwordConfirmation;
-    },
-    {
-      error: "As senhas não coincidem.",
-      path: ["passwordConfirmation"],
-    },
-  );
+const formSchema = registerFormBaseSchema
 
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = RegisterFormValues
 
 export default function RegisterPage() {
   const router = useRouter();
 
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [registrationSuccess, setRegistrationSuccess] = useState(false)
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -54,24 +44,28 @@ export default function RegisterPage() {
   const { isSubmitting } = form.formState
 
   async function onSubmit(values: FormValues) {
-    const { data,error } = await authClient.signUp.email({
-        name: values.username,
-        email: values.email,
-        password: values.password,
-        fetchOptions: {
-          onSuccess: () => {
-            router.push("/")
-          },
-          onError: (error) => {
-            if(error.error.message === "USER_ALREADY_EXISTS") { 
-              toast.error('E-mail já cadastrado')
-              form.setError("email", { message: "E-mail já cadastrado" })
-            }
-            toast.error(error.error.message)
-          }
-        }
-      });
-      
+    const { error } = await authClient.signUp.email({
+      name: values.username,
+      email: values.email,
+      password: values.password,
+      callbackURL: `${getPublicAppUrl()}/`,
+    })
+
+    if (error) {
+      const msg = (error.message ?? "").toLowerCase()
+      if (msg.includes("already") || msg.includes("exist")) {
+        toast.error("E-mail já cadastrado")
+        form.setError("email", { message: "E-mail já cadastrado" })
+        return
+      }
+      toast.error(error.message ?? "Não foi possível criar a conta.")
+      return
+    }
+
+    setRegistrationSuccess(true)
+    toast.success(
+      "Enviamos um e-mail de confirmação. Verifique sua caixa de entrada.",
+    )
   }
 
   return (
@@ -89,6 +83,17 @@ export default function RegisterPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {registrationSuccess ? (
+                    <div className="space-y-4 text-center">
+                      <p className="text-muted-foreground text-sm">
+                        Abra o link no e-mail para confirmar o cadastro. Depois você
+                        poderá entrar normalmente.
+                      </p>
+                      <Button type="button" onClick={() => router.push("/")}>
+                        Ir ao início
+                      </Button>
+                    </div>
+                  ) : (
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                       {/* Campo Nome */}
@@ -255,7 +260,10 @@ export default function RegisterPage() {
                       </Button>
                     </form>
                   </Form>
+                  )}
 
+                  {!registrationSuccess && (
+                    <>
                   {/* Separador */}
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
@@ -298,6 +306,8 @@ export default function RegisterPage() {
                       Facebook
                     </Button>
                   </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
@@ -306,8 +316,8 @@ export default function RegisterPage() {
                 <CardContent className="pt-6">
                   <div className="text-center text-sm">
                     <span className="text-muted-foreground">Já tem uma conta? </span>
-                    <Link 
-                      href="/register" 
+                    <Link
+                      href="/"
                       className="text-primary hover:underline font-medium"
                     >
                       Fazer login
