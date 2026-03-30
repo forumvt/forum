@@ -64,5 +64,24 @@ export const registerDialogFormSchema = registerFields
     },
   );
 
+const passwordField = z
+  .string("Senha inválida.")
+  .min(8, "Senha inválida.")
+  .refine((p) => !/^[a-z]+$/.test(p), {
+    message: REGISTER_MSG_PASSWORD_ONLY_LOWERCASE,
+  });
+
+export const resetPasswordFormSchema = z
+  .object({
+    password: passwordField,
+    passwordConfirmation: z.string("Senha inválida.").min(8, "Senha inválida."),
+  })
+  .refine((data) => data.password === data.passwordConfirmation, {
+    message: "As senhas não coincidem.",
+    path: ["passwordConfirmation"],
+  });
+
+export type ResetPasswordFormValues = z.infer<typeof resetPasswordFormSchema>;
+
 export type RegisterFormValues = z.infer<typeof registerFormBaseSchema>;
 export type RegisterDialogFormValues = z.infer<typeof registerDialogFormSchema>;

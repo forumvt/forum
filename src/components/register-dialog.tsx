@@ -3,7 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -29,6 +28,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
+import { getPublicAppUrl } from "@/lib/app-url";
 import {
   registerDialogFormSchema,
   type RegisterDialogFormValues,
@@ -38,13 +38,13 @@ const formSchema = registerDialogFormSchema;
 
 type FormValues = RegisterDialogFormValues;
 export function RegisterDialog() {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -57,27 +57,43 @@ export function RegisterDialog() {
   });
 
   async function onSubmit(values: FormValues) {
-    const { data, error } = await authClient.signUp.email({
-      name: values.username,
-      email: values.email,
-      password: values.password,
-      fetchOptions: {
-        onSuccess: () => {
-          router.push("/");
-        },
-        onError: (error) => {
-          if (error.error.message === "USER_ALREADY_EXISTS") {
-            toast.error("E-mail já cadastrado");
-            form.setError("email", { message: "E-mail já cadastrado" });
-          }
-          toast.error(error.error.message);
-        },
-      },
-    });
+    setLoading(true);
+    try {
+      const { error } = await authClient.signUp.email({
+        name: values.username,
+        email: values.email,
+        password: values.password,
+        callbackURL: `${getPublicAppUrl()}/`,
+      });
+      if (error) {
+        const msg = (error.message ?? "").toLowerCase();
+        if (msg.includes("already") || msg.includes("exist")) {
+          toast.error("E-mail já cadastrado");
+          form.setError("email", { message: "E-mail já cadastrado" });
+          return;
+        }
+        toast.error(error.message ?? "Não foi possível criar a conta.");
+        return;
+      }
+      setRegistrationSuccess(true);
+      toast.success(
+        "Enviamos um e-mail de confirmação. Verifique sua caixa de entrada.",
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) {
+          setRegistrationSuccess(false);
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <Button className="bg-blue-600 text-white hover:bg-blue-700">
           Registrar
@@ -89,10 +105,27 @@ export function RegisterDialog() {
             Registrar
           </DialogTitle>
           <DialogDescription className="text-gray-600">
-            Preencha seus dados para criar sua conta.
+            {registrationSuccess
+              ? "Próximo passo: confirme pelo link que enviamos."
+              : "Preencha seus dados para criar sua conta."}
           </DialogDescription>
         </DialogHeader>
 
+        {registrationSuccess ? (
+          <div className="space-y-4 text-center text-sm text-gray-600">
+            <p>
+              Abra o e-mail e clique no link para ativar a conta. Depois você
+              pode entrar pelo botão Entrar.
+            </p>
+            <Button
+              type="button"
+              className="w-full bg-blue-600 text-white hover:bg-blue-700"
+              onClick={() => setOpen(false)}
+            >
+              Fechar
+            </Button>
+          </div>
+        ) : (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -273,6 +306,7 @@ export function RegisterDialog() {
             </Button>
           </form>
         </Form>
+        )}
       </DialogContent>
     </Dialog>
   );

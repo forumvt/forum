@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -29,6 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
+import { getPublicAppUrl } from "@/lib/app-url";
 
 const formSchema = z.object({
   email: z.email("E-mail inválido!"),
@@ -48,11 +49,12 @@ export function LoginDialog() {
   });
 
   const [open, setOpen] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
 
   async function onSubmit(values: FormValues) {
     setLoading(true);
+    setNeedsEmailVerification(false);
 
     await authClient.signIn.email({
       email: values.email,
@@ -61,29 +63,63 @@ export function LoginDialog() {
         onSuccess: () => {
           router.push("/");
           setOpen(false);
+          setNeedsEmailVerification(false);
         },
         onError: (ctx) => {
+          const msg = ctx.error.message ?? "";
+          if (
+            ctx.error.status === 403 ||
+            msg.toLowerCase().includes("email not verified") ||
+            msg.toLowerCase().includes("verif")
+          ) {
+            setNeedsEmailVerification(true);
+            toast.error(
+              "Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.",
+            );
+            return;
+          }
           if (ctx.error.code === "USER_NOT_FOUND") {
             toast.error("E-mail não encontrado.");
-            return form.setError("email", {
+            form.setError("email", {
               message: "E-mail não encontrado.",
             });
+            return;
           }
           if (ctx.error.code === "INVALID_EMAIL_OR_PASSWORD") {
             toast.error("E-mail ou senha inválidos.");
             form.setError("password", {
               message: "E-mail ou senha inválidos.",
             });
-            return form.setError("email", {
+            form.setError("email", {
               message: "E-mail ou senha inválidos.",
             });
+            return;
           }
-          toast.error(ctx.error.message);
+          toast.error(msg || "Não foi possível entrar.");
         },
       },
     });
 
     setLoading(false);
+  }
+
+  async function handleResendVerification() {
+    const email = form.getValues("email").trim();
+    if (!email) {
+      toast.error("Informe o e-mail acima.");
+      return;
+    }
+    const { error } = await authClient.sendVerificationEmail({
+      email,
+      callbackURL: `${getPublicAppUrl()}/`,
+    });
+    if (error) {
+      toast.error(error.message ?? "Não foi possível reenviar o e-mail.");
+      return;
+    }
+    toast.success(
+      "Se existir uma conta com esse e-mail, enviaremos o link de confirmação.",
+    );
   }
 
   const handleSignInWithGoogle = async () => {
@@ -93,7 +129,15 @@ export function LoginDialog() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) {
+          setNeedsEmailVerification(false);
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <Button
           variant="ghost"
@@ -136,7 +180,16 @@ export function LoginDialog() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Senha</FormLabel>
+                    <div className="flex items-center justify-between gap-2">
+                      <FormLabel>Senha</FormLabel>
+                      <Link
+                        href="/forgot-password"
+                        className="text-primary text-xs hover:underline"
+                        onClick={() => setOpen(false)}
+                      >
+                        Esqueci minha senha
+                      </Link>
+                    </div>
                     <FormControl>
                       <Input
                         placeholder="Digite sua senha"
@@ -150,6 +203,17 @@ export function LoginDialog() {
               />
             </div>
 
+            {needsEmailVerification && (
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full"
+                onClick={handleResendVerification}
+              >
+                Reenviar e-mail de confirmação
+              </Button>
+            )}
+
             <div className="flex items-center gap-2">
               <Checkbox id="remember" />
               <Label htmlFor="remember" className="text-sm font-normal">
@@ -160,8 +224,9 @@ export function LoginDialog() {
             <Button
               type="submit"
               className="w-full bg-blue-600 text-white hover:bg-blue-700"
+              disabled={loading}
             >
-              Entrar
+              {loading ? "Entrando…" : "Entrar"}
             </Button>
             <Button
               variant="outline"

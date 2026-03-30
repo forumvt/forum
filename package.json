@@ -24,7 +24,9 @@
     "@tanstack/react-query": "^5.83.0",
     "@tanstack/react-table": "^8.21.3",
     "@upstash/redis": "^1.36.1",
+    "axios": "^1.14.0",
     "better-auth": "^1.2.12",
+    "cheerio": "^1.2.0",
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.7.0",
     "clsx": "^2.1.1",
@@ -38,6 +40,7 @@
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-hook-form": "^7.62.0",
+    "resend": "^6.9.4",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
     "zod": "^4.0.15"
