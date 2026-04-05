@@ -5,7 +5,10 @@ import { APIError, createAuthMiddleware } from "better-auth/api";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { sendEmail } from "@/lib/email";
-import { validateRegistrationCredentials } from "@/lib/register-validation";
+import {
+  normalizeEmailStripBrDomain,
+  validateRegistrationCredentials,
+} from "@/lib/register-validation";
 
 const authBaseUrl =
   process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "";
@@ -17,6 +20,13 @@ export const auth = betterAuth({
   baseURL: authBaseUrl || undefined,
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
+      const emailPaths = ["/sign-up/email", "/sign-in/email", "/forget-password"];
+      if (emailPaths.includes(ctx.path)) {
+        const body = ctx.body as { email?: unknown };
+        if (typeof body.email === "string") {
+          body.email = normalizeEmailStripBrDomain(body.email);
+        }
+      }
       if (ctx.path !== "/sign-up/email") {
         return;
       }

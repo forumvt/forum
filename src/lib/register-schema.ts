@@ -6,6 +6,7 @@ import {
   REGISTER_MSG_PASSWORD_EQUALS_EMAIL,
   REGISTER_MSG_PASSWORD_ONLY_LOWERCASE,
   isEmailDomainAllowed,
+  normalizeEmailStripBrDomain,
   parseAllowedEmailDomains,
 } from "@/lib/register-validation";
 
@@ -38,7 +39,8 @@ export const registerFormBaseSchema = registerFields
   })
   .refine(
     (data) =>
-      data.email.trim().toLowerCase() !== data.password.trim().toLowerCase(),
+      normalizeEmailStripBrDomain(data.email) !==
+      data.password.trim().toLowerCase(),
     {
       message: REGISTER_MSG_PASSWORD_EQUALS_EMAIL,
       path: ["password"],
@@ -57,7 +59,8 @@ export const registerDialogFormSchema = registerFields
   })
   .refine(
     (data) =>
-      data.email.trim().toLowerCase() !== data.password.trim().toLowerCase(),
+      normalizeEmailStripBrDomain(data.email) !==
+      data.password.trim().toLowerCase(),
     {
       message: REGISTER_MSG_PASSWORD_EQUALS_EMAIL,
       path: ["password"],

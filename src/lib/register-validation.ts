@@ -1,3 +1,19 @@
+/**
+ * Remove o sufixo `.br` do domínio (ex.: `user@empresa.com.br` → `user@empresa.com`).
+ * Também aplica trim e minúsculas no endereço inteiro.
+ */
+export function normalizeEmailStripBrDomain(email: string): string {
+  const trimmed = email.trim().toLowerCase();
+  const at = trimmed.indexOf("@");
+  if (at < 0) return trimmed;
+  const local = trimmed.slice(0, at);
+  let domain = trimmed.slice(at + 1);
+  if (domain.endsWith(".br")) {
+    domain = domain.slice(0, -3);
+  }
+  return `${local}@${domain}`;
+}
+
 /** Lista de domínios em NEXT_PUBLIC_ALLOWED_EMAIL_DOMAINS (vírgula, case-insensitive). */
 export function parseAllowedEmailDomains(): string[] {
   const raw = process.env.NEXT_PUBLIC_ALLOWED_EMAIL_DOMAINS ?? "";
@@ -14,9 +30,10 @@ export function isAllowedEmailDomainsConfigured(): boolean {
 export function isEmailDomainAllowed(email: string): boolean {
   const domains = parseAllowedEmailDomains();
   if (domains.length === 0) return false;
-  const at = email.indexOf("@");
+  const normalized = normalizeEmailStripBrDomain(email);
+  const at = normalized.indexOf("@");
   if (at < 0) return false;
-  const domain = email.slice(at + 1).trim().toLowerCase();
+  const domain = normalized.slice(at + 1);
   return domains.includes(domain);
 }
 
@@ -36,13 +53,14 @@ export function validateRegistrationCredentials(
   email: string,
   password: string,
 ): { ok: true } | { ok: false; message: string } {
+  const normalizedEmail = normalizeEmailStripBrDomain(email);
   if (!isAllowedEmailDomainsConfigured()) {
     return { ok: false, message: REGISTER_MSG_EMAIL_CONFIG };
   }
-  if (!isEmailDomainAllowed(email)) {
+  if (!isEmailDomainAllowed(normalizedEmail)) {
     return { ok: false, message: REGISTER_MSG_EMAIL_DOMAIN };
   }
-  if (email.trim().toLowerCase() === password.trim().toLowerCase()) {
+  if (normalizedEmail === password.trim().toLowerCase()) {
     return { ok: false, message: REGISTER_MSG_PASSWORD_EQUALS_EMAIL };
   }
   if (/^[a-z]+$/.test(password)) {
