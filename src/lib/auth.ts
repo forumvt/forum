@@ -13,11 +13,20 @@ import {
 const authBaseUrl =
   process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "";
 
+/** Origens extra (apex/www, preview, etc.); vírgula em BETTER_AUTH_TRUSTED_ORIGINS. */
+const trustedOriginsFromEnv =
+  process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(",")
+    .map((s) => s.trim())
+    .filter(Boolean) ?? [];
+
 const DEFAULT_USER_IMAGE =
   "https://www.subeiros.com/eris-apple.png";
 
 export const auth = betterAuth({
   baseURL: authBaseUrl || undefined,
+  ...(trustedOriginsFromEnv.length > 0
+    ? { trustedOrigins: trustedOriginsFromEnv }
+    : {}),
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
       const emailPaths = ["/sign-up/email", "/sign-in/email", "/forget-password"];
