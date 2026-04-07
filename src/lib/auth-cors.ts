@@ -100,12 +100,17 @@ export function mergeCorsIntoResponse(
   response: Response,
   request: Request
 ): Response {
-  const cors = corsHeadersForRequest(request);
-  if (!cors) return response;
   const headers = new Headers(response.headers);
-  cors.forEach((value, key) => {
-    headers.set(key, value);
-  });
+  headers.set(
+    "Cache-Control",
+    "private, no-store, max-age=0, must-revalidate"
+  );
+  const cors = corsHeadersForRequest(request);
+  if (cors) {
+    cors.forEach((value, key) => {
+      headers.set(key, value);
+    });
+  }
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,

@@ -16,12 +16,37 @@ const authBaseUrl =
 
 const trustedOrigins = getTrustedOrigins();
 
+/** Permite sessão válida em subeiros.com e www.subeiros.com (cookie Domain=.subeiros.com). */
+function rootCookieDomainFromBaseUrl(url: string): string | undefined {
+  if (!url) return undefined;
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    if (host === "localhost" || host.endsWith(".localhost")) return undefined;
+    const apex = host.startsWith("www.") ? host.slice(4) : host;
+    return `.${apex}`;
+  } catch {
+    return undefined;
+  }
+}
+
+const cookieDomain = rootCookieDomainFromBaseUrl(authBaseUrl);
+
 const DEFAULT_USER_IMAGE =
   "https://www.subeiros.com/eris-apple.png";
 
 export const auth = betterAuth({
   baseURL: authBaseUrl || undefined,
   ...(trustedOrigins.length > 0 ? { trustedOrigins } : {}),
+  ...(cookieDomain
+    ? {
+        advanced: {
+          crossSubDomainCookies: {
+            enabled: true,
+            domain: cookieDomain,
+          },
+        },
+      }
+    : {}),
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
       const emailPaths = ["/sign-up/email", "/sign-in/email", "/forget-password"];
