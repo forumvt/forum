@@ -1,6 +1,29 @@
 /** Origens permitidas para CORS (devem coincidir com Better Auth trustedOrigins). */
 
-function getAllowedOrigins(): string[] {
+/**
+ * Se a URL for apex (`dominio.tld`) ou `www.dominio.tld`, devolve a variante irmã
+ * para o mesmo site servir em ambos sem falha de CORS.
+ */
+function siblingWwwOrigin(origin: string): string | null {
+  try {
+    const u = new URL(origin);
+    const h = u.hostname.toLowerCase();
+    if (h === "localhost" || h.endsWith(".localhost")) return null;
+    const parts = h.split(".");
+    if (parts[0] === "www" && parts.length >= 3) {
+      return `${u.protocol}//${parts.slice(1).join(".")}`;
+    }
+    if (parts[0] !== "www" && parts.length === 2) {
+      return `${u.protocol}//www.${h}`;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** Base + BETTER_AUTH_TRUSTED_ORIGINS + par www/apex quando aplicável. */
+export function getTrustedOrigins(): string[] {
   const base =
     process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "";
   const baseOrigin = base ? new URL(base).origin : null;
@@ -11,7 +34,15 @@ function getAllowedOrigins(): string[] {
   const set = new Set<string>();
   if (baseOrigin) set.add(baseOrigin);
   for (const o of extra) set.add(o);
+  for (const o of [...set]) {
+    const sib = siblingWwwOrigin(o);
+    if (sib) set.add(sib);
+  }
   return [...set];
+}
+
+function getAllowedOrigins(): string[] {
+  return getTrustedOrigins();
 }
 
 function buildCorsHeaders(origin: string): Headers {
