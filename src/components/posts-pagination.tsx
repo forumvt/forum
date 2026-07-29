@@ -1,6 +1,7 @@
-import Link from "next/link";
-import { Button } from "./ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
+
+import { Button } from "./ui/button";
 
 interface PostsPaginationProps {
     currentPage: number;
@@ -46,13 +47,16 @@ export function PostsPagination({
     );
   
     return (
-      <div className="border-border flex flex-col gap-4 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+      <nav
+        aria-label="Paginação de mensagens"
+        className="border-border flex flex-col gap-4 border-t pt-4 sm:flex-row sm:items-center sm:justify-between"
+      >
         <p className="text-muted-foreground text-sm">
           Mostrando <span className="font-medium">{start}</span>–
           <span className="font-medium">{end}</span> de{" "}
-          <span className="font-medium">{totalItems}</span> tópicos
+          <span className="font-medium">{totalItems}</span> mensagens
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-2">
           {prevUrl ? (
             <Button variant="outline" size="sm" asChild>
               <Link href={prevUrl as never}>
@@ -70,10 +74,14 @@ export function PostsPagination({
           <div className="flex items-center gap-1">
             {pageStart > 1 && (
               <>
-                <Button variant="outline" size="icon" className="h-8 w-8" asChild>
+                <Button variant="outline" size="icon" className="size-8" asChild>
                   <Link href={buildPageUrl(basePath, 1, per) as never}>1</Link>
                 </Button>
-                {pageStart > 2 && <span className="text-muted-foreground px-1">…</span>}
+                {pageStart > 2 && (
+                  <span aria-hidden="true" className="text-muted-foreground px-1">
+                    …
+                  </span>
+                )}
               </>
             )}
             {pageNumbers.map((n) =>
@@ -82,7 +90,9 @@ export function PostsPagination({
                   key={n}
                   variant="default"
                   size="icon"
-                  className="h-8 w-8"
+                  className="size-8"
+                  aria-current="page"
+                  aria-label={`Página ${n}, página atual`}
                   disabled
                 >
                   {n}
@@ -92,25 +102,35 @@ export function PostsPagination({
                   key={n}
                   variant="outline"
                   size="icon"
-                  className="h-8 w-8"
+                  className="size-8"
                   asChild
                 >
-                  <Link href={buildPageUrl(basePath, n, per) as never}>{n}</Link>
+                  <Link
+                    href={buildPageUrl(basePath, n, per) as never}
+                    aria-label={`Página ${n}`}
+                  >
+                    {n}
+                  </Link>
                 </Button>
               ),
             )}
             {pageEnd < totalPages && (
               <>
                 {pageEnd < totalPages - 1 && (
-                  <span className="text-muted-foreground px-1">…</span>
+                  <span aria-hidden="true" className="text-muted-foreground px-1">
+                    …
+                  </span>
                 )}
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-8 w-8"
+                  className="size-8"
                   asChild
                 >
-                  <Link href={buildPageUrl(basePath, totalPages, per) as never}>
+                  <Link
+                    href={buildPageUrl(basePath, totalPages, per) as never}
+                    aria-label={`Página ${totalPages}`}
+                  >
                     {totalPages}
                   </Link>
                 </Button>
@@ -132,6 +152,6 @@ export function PostsPagination({
             </Button>
           )}
         </div>
-      </div>
+      </nav>
     );
   }

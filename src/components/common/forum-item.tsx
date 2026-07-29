@@ -14,18 +14,20 @@ const ForumItem = ({
   textContainerClassName,
   color,
 }: ForumItemProps) => {
+  // Apenas a cor da borda identifica a categoria; o hover usa o token do tema
+  // para não quebrar no dark mode.
   const colorClasses =
     color === "teal"
-      ? "border-teal-500 hover:bg-teal-50"
+      ? "border-teal-500"
       : color === "purple"
-        ? "border-purple-500 hover:bg-purple-50"
-        : "border-orange-500 hover:bg-orange-50";
+        ? "border-purple-500"
+        : "border-orange-500";
 
   return (
     <Link
       href={`/forums/${forum.slug}`}
       className={cn(
-        "flex flex-col gap-2 rounded-lg border p-4 transition-colors",
+        "hover:bg-muted focus-visible:ring-ring flex min-w-0 flex-col gap-2 rounded-lg border p-4 transition-colors outline-none focus-visible:ring-[3px]",
         colorClasses,
       )}
     >

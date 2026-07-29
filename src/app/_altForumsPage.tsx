@@ -66,9 +66,9 @@ export default function AllForumsPage({ initialForums, initialThreads, initialCu
       else setThreads(data.threads);
 
       setCursor(data.nextCursor);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err?.message || "Unknown error");
+      setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -204,7 +204,7 @@ export default function AllForumsPage({ initialForums, initialThreads, initialCu
         <footer className="mt-8 text-center">
           <div className="rounded-lg border-2 border-purple-200 bg-gradient-to-r from-purple-100 to-pink-100 p-4">
             <h3 className="mb-2 text-sm font-bold text-purple-800">🌟 All Hail Eris! All Hail Discordia! 🌟</h3>
-            <p className="text-xs text-purple-600">"We Discordians must stick apart!" - Malaclypse the Younger</p>
+            <p className="text-xs text-purple-600">&quot;We Discordians must stick apart!&quot; - Malaclypse the Younger</p>
           </div>
         </footer>
       </div>

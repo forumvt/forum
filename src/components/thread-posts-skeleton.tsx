@@ -6,10 +6,10 @@ export function ThreadPostsSkeleton() {
       {Array.from({ length: 3 }).map((_, i) => (
         <div
           key={i}
-          className="flex overflow-hidden rounded-lg border border-gray-200 bg-white"
+          className="border-border bg-card flex overflow-hidden rounded-lg border"
         >
           {/* Desktop Sidebar Skeleton */}
-          <div className="hidden w-48 border-r bg-gray-50 p-4 md:block">
+          <div className="border-border bg-muted hidden w-48 shrink-0 border-r p-4 md:block">
             <Skeleton className="mx-auto mb-2 h-36 w-36" />
             <Skeleton className="mx-auto h-5 w-24" />
           </div>

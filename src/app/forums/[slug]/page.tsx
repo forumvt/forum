@@ -5,13 +5,13 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { ForumSkeleton } from "@/components/forum-skeleton";
+import { ThreadFilters } from "@/components/thread-filters";
 import { ThreadTitleWithPreview } from "@/components/thread-title-with-preview";
 import { ThreadsPagination } from "@/components/threads-pagination";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { auth } from "@/lib/auth";
-import { cn } from "@/lib/utils";
 import * as forumService from "@/services/forum.service";
 import * as threadService from "@/services/thread.service";
 import type { FilterType } from "@/types/filters";
@@ -89,75 +89,29 @@ async function ForumContent({
             </div>
           </div>
           {session?.user && (
-            <Link href={`/forums/${slug}/post-thread`}>
-              <Button
-                className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 px-4 py-2 font-medium shadow-lg sm:px-6 sm:py-3"
-                size="lg"
-              >
-                <PlusIcon className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+            <Button
+              asChild
+              size="lg"
+              className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 w-full shrink-0 font-medium shadow-lg sm:w-auto"
+            >
+              <Link href={`/forums/${slug}/post-thread`}>
+                <PlusIcon className="size-4 sm:size-5" />
                 <span className="text-sm sm:text-base">Criar Tópico</span>
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           )}
         </div>
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        <Link
-          href={`/forums/${slug}` as never}
-          className={cn(
-            "border-2 border-foreground px-3 py-1.5 text-sm font-medium transition-colors",
-            filter === "all"
-              ? "bg-foreground text-background"
-              : "bg-card text-foreground hover:bg-muted"
-          )}
-        >
-          Todos
-        </Link>
-        {session?.user && (
-          <>
-            <Link
-              href={`/forums/${slug}?filter=answered-by-me` as never}
-              className={cn(
-                "border-2 border-foreground px-3 py-1.5 text-sm font-medium transition-colors",
-                filter === "answered-by-me"
-                  ? "bg-foreground text-background"
-                  : "bg-card text-foreground hover:bg-muted"
-              )}
-            >
-              Respondidos por mim
-            </Link>
-            <Link
-              href={`/forums/${slug}?filter=viewed-by-me` as never}
-              className={cn(
-                "border-2 border-foreground px-3 py-1.5 text-sm font-medium transition-colors",
-                filter === "viewed-by-me"
-                  ? "bg-foreground text-background"
-                  : "bg-card text-foreground hover:bg-muted"
-              )}
-            >
-              Visualizadas por mim
-            </Link>
-          </>
-        )}
-        <Link
-          href={`/forums/${slug}?filter=unanswered` as never}
-          className={cn(
-            "border-2 border-foreground px-3 py-1.5 text-sm font-medium transition-colors",
-            filter === "unanswered"
-              ? "bg-foreground text-background"
-              : "bg-card text-foreground hover:bg-muted"
-          )}
-        >
-          Sem respostas
-        </Link>
-      </div>
+      <ThreadFilters
+        active={filter}
+        basePath={`/forums/${slug}`}
+        showAuthFilters={!!session?.user}
+      />
 
       {threads.length === 0 ? (
-        <div className="bg-muted/50 border-border rounded-lg border py-12 text-center">
-          <div className="mb-4">
-            <MessageSquare className="text-muted-foreground mx-auto h-16 w-16" />
-          </div>
+        <div className="bg-muted/50 border-border rounded-lg border px-4 py-12 text-center">
+          <MessageSquare className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
           <h3 className="text-foreground mb-2 text-xl font-bold">
             Ainda não há tópicos
           </h3>
@@ -197,7 +151,7 @@ async function ForumContent({
                     </div>
                   </div>
 
-                  <div className="min-w-0 flex-1">
+                  <div className="w-full min-w-0 flex-1">
                     <div className="mb-2">
                       <ThreadTitleWithPreview
                         title={thread.title}
@@ -237,7 +191,7 @@ async function ForumContent({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 text-sm">
+                  <div className="flex shrink-0 flex-wrap items-center gap-3 text-sm">
                     <div className="text-muted-foreground flex items-center gap-1">
                       <MessageSquare className="h-4 w-4" />
                       <span className="hidden sm:inline">Respostas:</span>
@@ -279,9 +233,9 @@ export default async function ForumDetailsPage({
 }: ForumPageProps) {
   return (
     <div className="bg-background min-h-screen">
-      <div className="mx-auto max-w-7xl space-y-6 p-6">
+      <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6">
         <div className="mb-6 text-center sm:mb-8">
-          <h1 className="text-foreground text-2xl font-bold sm:text-3xl">
+          <h1 className="chaos-heading text-2xl font-bold sm:text-3xl">
             VT Forums
           </h1>
         </div>

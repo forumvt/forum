@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -28,8 +29,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { authClient } from "@/lib/auth-client";
 import { getPublicAppUrl } from "@/lib/app-url";
+import { authClient } from "@/lib/auth-client";
 
 const formSchema = z.object({
   email: z.email("E-mail inválido!"),
@@ -139,69 +140,64 @@ export function LoginDialog() {
       }}
     >
       <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          className="bg-blue-600 text-white hover:bg-blue-700"
-        >
-          Entrar
-        </Button>
+        <Button variant="ghost">Entrar</Button>
       </DialogTrigger>
-      <DialogContent className="border border-gray-200 bg-white sm:max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-gray-900">
-            Entrar
-          </DialogTitle>
-          <DialogDescription className="text-gray-600">
+          <DialogTitle className="text-2xl font-bold">Entrar</DialogTitle>
+          <DialogDescription>
             Digite suas credenciais para acessar sua conta.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Digite seu email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="email"
+                      autoComplete="email"
+                      placeholder="Digite seu email"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            <div className="space-y-2">
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex items-center justify-between gap-2">
-                      <FormLabel>Senha</FormLabel>
-                      <Link
-                        href="/forgot-password"
-                        className="text-primary text-xs hover:underline"
-                        onClick={() => setOpen(false)}
-                      >
-                        Esqueci minha senha
-                      </Link>
-                    </div>
-                    <FormControl>
-                      <Input
-                        placeholder="Digite sua senha"
-                        type="password"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <FormLabel>Senha</FormLabel>
+                    <Link
+                      href="/forgot-password"
+                      className="text-primary text-xs underline-offset-4 hover:underline"
+                      onClick={() => setOpen(false)}
+                    >
+                      Esqueci minha senha
+                    </Link>
+                  </div>
+                  <FormControl>
+                    <Input
+                      placeholder="Digite sua senha"
+                      type="password"
+                      autoComplete="current-password"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {needsEmailVerification && (
               <Button
@@ -223,18 +219,22 @@ export function LoginDialog() {
 
             <Button
               type="submit"
-              className="w-full bg-blue-600 text-white hover:bg-blue-700"
+              className="w-full"
               disabled={loading}
+              aria-busy={loading}
             >
+              {loading && (
+                <Loader2 className="animate-spin" aria-hidden="true" />
+              )}
               {loading ? "Entrando…" : "Entrar"}
             </Button>
             <Button
               variant="outline"
-              className="w-full border-gray-300 text-gray-700 hover:bg-gray-50"
+              className="w-full"
               onClick={handleSignInWithGoogle}
               type="button"
             >
-              <svg viewBox="0 0 24 24" className="h-4 w-4">
+              <svg viewBox="0 0 24 24" className="size-4" aria-hidden="true">
                 <path
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                   fill="#4285F4"
@@ -254,9 +254,6 @@ export function LoginDialog() {
               </svg>
               Entrar com Google
             </Button>
-            {/* <Button onSubmit={form.handleSubmit(onSubmit)} type="submit" className="w-full" disabled={loading}>
-            {loading ? "Entrando..." : "Entrar"}
-          </Button> */}
           </form>
         </Form>
       </DialogContent>

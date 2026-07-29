@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lock, Mail, User } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -27,8 +27,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { authClient } from "@/lib/auth-client";
 import { getPublicAppUrl } from "@/lib/app-url";
+import { authClient } from "@/lib/auth-client";
 import {
   registerDialogFormSchema,
   type RegisterDialogFormValues,
@@ -42,8 +42,6 @@ export function RegisterDialog() {
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -95,16 +93,12 @@ export function RegisterDialog() {
       }}
     >
       <DialogTrigger asChild>
-        <Button className="bg-blue-600 text-white hover:bg-blue-700">
-          Registrar
-        </Button>
+        <Button>Registrar</Button>
       </DialogTrigger>
-      <DialogContent className="border border-gray-200 bg-white sm:max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-gray-900">
-            Registrar
-          </DialogTitle>
-          <DialogDescription className="text-gray-600">
+          <DialogTitle className="text-2xl font-bold">Registrar</DialogTitle>
+          <DialogDescription>
             {registrationSuccess
               ? "Próximo passo: confirme pelo link que enviamos."
               : "Preencha seus dados para criar sua conta."}
@@ -112,14 +106,14 @@ export function RegisterDialog() {
         </DialogHeader>
 
         {registrationSuccess ? (
-          <div className="space-y-4 text-center text-sm text-gray-600">
+          <div className="text-muted-foreground space-y-4 text-center text-sm">
             <p>
               Abra o e-mail e clique no link para ativar a conta. Depois você
               pode entrar pelo botão Entrar.
             </p>
             <Button
               type="button"
-              className="w-full bg-blue-600 text-white hover:bg-blue-700"
+              className="w-full"
               onClick={() => setOpen(false)}
             >
               Fechar
@@ -193,7 +187,7 @@ export function RegisterDialog() {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="absolute top-1/2 right-1 -translate-y-1/2"
+                        className="absolute top-1/2 right-1 size-7 -translate-y-1/2"
                         onClick={() => setShowPass((s) => !s)}
                         aria-label={
                           showPass ? "Ocultar senha" : "Mostrar senha"
@@ -232,7 +226,7 @@ export function RegisterDialog() {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="absolute top-1/2 right-1 -translate-y-1/2"
+                        className="absolute top-1/2 right-1 size-7 -translate-y-1/2"
                         onClick={() => setShowConfirm((s) => !s)}
                         aria-label={
                           showConfirm
@@ -299,9 +293,13 @@ export function RegisterDialog() {
 
             <Button
               type="submit"
-              className="w-full bg-blue-600 text-white hover:bg-blue-700"
+              className="w-full"
               disabled={loading}
+              aria-busy={loading}
             >
+              {loading && (
+                <Loader2 className="animate-spin" aria-hidden="true" />
+              )}
               {loading ? "Criando conta..." : "Registrar"}
             </Button>
           </form>

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Clock, Eye, MessageSquare, User } from "lucide-react";
+import { MessageSquare, ThumbsUp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -32,7 +32,7 @@ function BBCodeContent({ content }: { content: string }) {
             key={index}
             className="prose prose-sm dark:prose-invert max-w-none"
           >
-            <p className="text-foreground whitespace-pre-wrap">
+            <p className="text-foreground break-words whitespace-pre-wrap">
               {element.content}
             </p>
           </div>
@@ -106,7 +106,7 @@ function BBCodeContent({ content }: { content: string }) {
             <div className="bg-accent text-accent-foreground px-4 py-1.5 font-bold">
               {element.data?.username ? `${element.data.username}:` : "Quote:"}
             </div>
-            <div className="prose prose-sm dark:prose-invert max-w-none p-4 pt-2 text-muted-foreground">
+            <div className="text-muted-foreground prose prose-sm dark:prose-invert max-w-none p-4 pt-2 break-words">
               {element.content}
             </div>
           </div>
@@ -117,15 +117,17 @@ function BBCodeContent({ content }: { content: string }) {
     }
   };
 
-  return <div className="space-y-4">{elements.map(renderElement)}</div>;
+  return (
+    <div className="min-w-0 space-y-4">{elements.map(renderElement)}</div>
+  );
 }
 
 // Componente para User Info Sidebar (Desktop)
 function UserSidebar({ post }: { post: Post }) {
   return (
-    <div className="border-border w-48 border-r bg-muted p-4">
+    <div className="border-border bg-muted w-48 shrink-0 border-r p-4">
       <div className="text-center">
-        <Avatar className="border-border mx-auto mb-2 h-36 w-36 rounded-none border">
+        <Avatar className="border-border mx-auto mb-2 size-36 rounded-none border">
           <AvatarImage
             src={
               post.userAvatar ||
@@ -136,20 +138,13 @@ function UserSidebar({ post }: { post: Post }) {
             {post.author.slice(0, 2).toUpperCase()}
           </AvatarFallback>
         </Avatar>
-        <h3 className="text-foreground hover:text-primary cursor-pointer font-semibold hover:underline">
+        <h3 className="text-foreground font-semibold break-words">
           {post.author}
         </h3>
-        <Badge
-          variant="secondary"
-          className="mb-2 text-xs"
-        >
-          {post.title}
-        </Badge>
-        {post.isOriginalPoster && (
-          <Badge variant="default" className="mb-2 text-xs">
-            OP
-          </Badge>
-        )}
+        <div className="mt-2 flex flex-wrap justify-center gap-1">
+          <Badge variant="secondary">{post.title}</Badge>
+          {post.isOriginalPoster && <Badge>OP</Badge>}
+        </div>
       </div>
       <div className="text-muted-foreground mt-3 space-y-1 text-xs">
         <div>Membro desde: {post.joinDate}</div>
@@ -163,9 +158,9 @@ function UserSidebar({ post }: { post: Post }) {
 // Componente para Header Mobile
 function MobilePostHeader({ post }: { post: Post }) {
   return (
-    <div className="border-border border-b bg-muted p-4">
-      <div className="flex items-center space-x-3">
-        <Avatar className="border-border h-12 w-12 rounded-none border">
+    <div className="border-border bg-muted border-b p-4">
+      <div className="flex items-center gap-3">
+        <Avatar className="border-border size-12 shrink-0 rounded-none border">
           <AvatarImage
             src={
               post.userAvatar ||
@@ -177,37 +172,25 @@ function MobilePostHeader({ post }: { post: Post }) {
           </AvatarFallback>
         </Avatar>
 
-        <div className="flex-1">
-          <div className="flex items-center space-x-2">
-            <h3 className="text-foreground hover:text-primary cursor-pointer font-semibold hover:underline">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-foreground font-semibold break-words">
               {post.author}
             </h3>
-            <Badge
-              variant="secondary"
-              className="text-xs"
-            >
-              {post.title}
-            </Badge>
-            {post.isOriginalPoster && (
-              <Badge variant="default" className="text-xs">
-                OP
-              </Badge>
-            )}
+            <Badge variant="secondary">{post.title}</Badge>
+            {post.isOriginalPoster && <Badge>OP</Badge>}
           </div>
 
-          <div className="text-muted-foreground mt-1 flex items-center space-x-3 text-xs">
+          <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 text-xs">
             <span>Posts: {post.posts}</span>
             <span>Likes: {post.likes}</span>
           </div>
         </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-between">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <span className="text-muted-foreground text-sm">{post.timestamp}</span>
-        <Badge
-          variant="outline"
-          className="text-muted-foreground text-xs"
-        >
+        <Badge variant="outline" className="text-muted-foreground">
           Mensagem
         </Badge>
       </div>
@@ -222,115 +205,21 @@ function PostActions({ onReply }: { onReply: () => void }) {
       <Button
         variant="ghost"
         size="sm"
-        className="text-muted-foreground flex items-center gap-1"
+        className="text-muted-foreground hover:text-foreground"
       >
-        👍 Like
+        <ThumbsUp />
+        Curtir
       </Button>
       <Button
         variant="ghost"
         size="sm"
-        className="text-muted-foreground flex items-center gap-1"
+        className="text-muted-foreground hover:text-foreground"
         onClick={onReply}
       >
-        💬 Reply
+        <MessageSquare />
+        Responder
       </Button>
     </div>
-  );
-}
-
-// Componente para Post Card
-
-// Componente para Breadcrumb
-function Breadcrumb() {
-  return (
-    <nav className="text-muted-foreground mb-6 flex items-center space-x-2 rounded-lg bg-card p-3 text-sm shadow-sm">
-      <a href="#" className="text-primary flex items-center gap-1 hover:underline">
-        <MessageSquare className="h-4 w-4" />
-        Fóruns
-      </a>
-      <ChevronRight className="h-4 w-4" />
-      <a href="#" className="text-primary flex items-center gap-1 hover:underline">
-        <MessageSquare className="h-4 w-4" />
-        Categoria
-      </a>
-      <ChevronRight className="h-4 w-4" />
-      <a href="#" className="text-primary flex items-center gap-1 hover:underline">
-        <MessageSquare className="h-4 w-4" />
-        Fórum
-      </a>
-    </nav>
-  );
-}
-
-// Componente para Thread Header
-function ThreadHeader({
-  thread,
-}: {
-  thread: { title: string; userName: string | null; createdAt: Date };
-}) {
-  return (
-    <div className="chaos-card bg-primary text-primary-foreground mb-6 p-4 md:p-6">
-      <h1 className="mb-4 text-xl font-bold break-words md:text-3xl">
-        {thread.title}
-      </h1>
-      <div className="flex flex-col space-y-3 text-sm md:flex-row md:items-center md:space-y-0 md:space-x-6">
-        <div className="flex items-center space-x-2">
-          <div className="flex items-center space-x-1">
-            <User className="h-4 w-4" />
-            <span className="hidden md:inline">Autor:</span>
-            <a href="#" className="truncate font-medium hover:underline">
-              {thread.userName || "Usuário Anônimo"}
-            </a>
-          </div>
-        </div>
-        <div className="flex items-center space-x-1">
-          <Clock className="h-4 w-4" />
-          <span className="hidden md:inline">Criado em:</span>
-          <span>{new Date(thread.createdAt).toLocaleDateString("pt-BR")}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Componente para Thread Stats
-function ThreadStats({
-  views,
-  repliesCount,
-}: {
-  views: number;
-  repliesCount: number;
-}) {
-  return (
-    <div className="border-border bg-muted mt-6 rounded-lg border p-4">
-      <div className="flex items-center justify-between text-sm">
-        <div className="flex items-center space-x-6">
-          <div className="text-foreground flex items-center space-x-1">
-            <Eye className="h-4 w-4" />
-            <span>{views} visualizações</span>
-          </div>
-          <div className="text-foreground flex items-center space-x-1">
-            <MessageSquare className="h-4 w-4" />
-            <span>{repliesCount} respostas</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Componente para Empty State
-function EmptyState() {
-  return (
-    <Card className="border-border bg-muted p-8 text-center">
-      <MessageSquare className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-      <h3 className="text-foreground mb-2 text-lg font-semibold">
-        Ainda não há mensagens
-      </h3>
-      <p className="text-muted-foreground">
-        Seja o primeiro a responder a este tópico!
-      </p>
-    </Card>
   );
 }
 
@@ -357,7 +246,7 @@ export function PostCard({
       {/* DESKTOP */}
       <div className="hidden md:flex">
         <UserSidebar post={post} />
-        <div className="flex flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col">
           <div className="p-4">
             <BBCodeContent content={post.content} />
           </div>

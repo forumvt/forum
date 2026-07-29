@@ -1,6 +1,6 @@
 "use client";
 
-import { BookMarked, LayoutGrid } from "lucide-react";
+import { BookMarked, Check, LayoutGrid } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -20,27 +20,23 @@ export function SkinSwitcher() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" title="Tema visual">
           {skin === "principia" ? (
-            <BookMarked className="h-[1.2rem] w-[1.2rem]" />
+            <BookMarked className="size-[1.2rem]" />
           ) : (
-            <LayoutGrid className="h-[1.2rem] w-[1.2rem]" />
+            <LayoutGrid className="size-[1.2rem]" />
           )}
           <span className="sr-only">Trocar tema visual</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem
-          onClick={() => setSkin("default")}
-          className={skin === "default" ? "bg-accent text-accent-foreground" : ""}
-        >
-          <LayoutGrid className="mr-2 h-4 w-4" />
-          Fórum normal
+        <DropdownMenuItem onClick={() => setSkin("default")}>
+          <LayoutGrid />
+          <span className="flex-1">Fórum normal</span>
+          {skin === "default" && <Check className="text-foreground" />}
         </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => setSkin("principia")}
-          className={skin === "principia" ? "bg-accent text-accent-foreground" : ""}
-        >
-          <BookMarked className="mr-2 h-4 w-4" />
-          Principia Discordia
+        <DropdownMenuItem onClick={() => setSkin("principia")}>
+          <BookMarked />
+          <span className="flex-1">Principia Discordia</span>
+          {skin === "principia" && <Check className="text-foreground" />}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

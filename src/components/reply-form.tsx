@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  HelpCircle,
-  ImageIcon,
-  MessageSquare,
-  Plus,
-  Send,
-  Twitter,
-  X,
-  Youtube,
-} from "lucide-react";
+import { HelpCircle, Loader2, MessageSquare, Send } from "lucide-react";
 import type React from "react";
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 
@@ -18,9 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { LoginDialog } from "./login-dialog";
+import { RegisterDialog } from "./register-dialog";
 import { Collapsible, CollapsibleContent } from "./ui/collapsible";
-import { Input } from "./ui/input";
 
 export interface ReplyFormHandle {
   replyTo: (username: string, content: string) => void;
@@ -160,24 +151,20 @@ export const ReplyForm = forwardRef<ReplyFormHandle, ReplyFormProps>(
 
     if (!isAuthenticated) {
       return (
-        <Card className="mt-8 border border-gray-200 bg-gray-50 p-6 text-center">
-          <div className="mb-4 flex items-center justify-center">
-            <MessageSquare className="mr-2 h-8 w-8 text-gray-600" />
-            <h3 className="text-lg font-semibold text-gray-900">
+        <Card className="border-border bg-muted/50 p-6 text-center">
+          <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
+            <MessageSquare className="text-muted-foreground size-8" />
+            <h3 className="text-foreground text-lg font-semibold">
               Participe da Discussão!
             </h3>
           </div>
-          <p className="mb-4 text-foreground">
+          <p className="text-muted-foreground mb-4">
             Você precisa fazer login ou se registrar para responder a este
             tópico.
           </p>
-          <div className="flex items-center justify-center space-x-3">
-            <Button variant="outline">
-              Entrar
-            </Button>
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-              Registrar
-            </Button>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <LoginDialog />
+            <RegisterDialog />
           </div>
         </Card>
       );
@@ -223,20 +210,17 @@ export const ReplyForm = forwardRef<ReplyFormHandle, ReplyFormProps>(
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <div className="mb-2 flex items-center justify-between">
-              <label
-                htmlFor="post-content"
-                className="text-foreground text-sm font-medium"
-              >
-                Conteúdo
-              </label>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <Label htmlFor="post-content">Conteúdo</Label>
               <Button
+                type="button"
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowHelp(!showHelp)}
-                className="text-muted-foreground hover:text-foreground gap-1 text-xs"
+                aria-expanded={showHelp}
+                className="text-muted-foreground hover:text-foreground text-xs"
               >
-                <HelpCircle className="h-3 w-3" />
+                <HelpCircle />
                 BBCode
               </Button>
             </div>
@@ -317,9 +301,14 @@ export const ReplyForm = forwardRef<ReplyFormHandle, ReplyFormProps>(
             <Button
               onClick={handleSubmit}
               disabled={!hasContent || isSubmitting}
-              className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+              aria-busy={isSubmitting}
+              className="w-full sm:w-auto"
             >
-              <Send className="h-4 w-4" />
+              {isSubmitting ? (
+                <Loader2 className="animate-spin" aria-hidden="true" />
+              ) : (
+                <Send />
+              )}
               {isSubmitting ? "Enviando..." : "Enviar Resposta"}
             </Button>
           </div>

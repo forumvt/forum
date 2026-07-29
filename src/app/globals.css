@@ -26,6 +26,7 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -64,8 +65,9 @@
   --muted-foreground: oklch(0.5 0.02 260);
 
   --destructive: oklch(0.55 0.22 25);
-  --border: oklch(0.9 0.01 260);
-  --input: oklch(0.96 0.01 260);
+  --destructive-foreground: oklch(0.98 0.01 25);
+  --border: oklch(0.88 0.01 260);
+  --input: oklch(0.85 0.01 260);
   --ring: oklch(0.4 0.05 260);
 
   --card: oklch(1 0 0);
@@ -103,9 +105,10 @@
   --muted-foreground: oklch(0.7 0.02 260);
 
   --destructive: oklch(0.55 0.22 25);
-  --border: oklch(0.3 0.02 260);
-  --input: oklch(0.22 0.02 260);
-  --ring: oklch(0.6 0.02 260);
+  --destructive-foreground: oklch(0.98 0.01 25);
+  --border: oklch(0.34 0.02 260);
+  --input: oklch(0.42 0.02 260);
+  --ring: oklch(0.65 0.03 260);
 
   --card: oklch(0.2 0.02 260);
   --card-foreground: var(--foreground);
@@ -145,8 +148,9 @@
   --muted-foreground: oklch(0.28 0.02 30);
 
   --destructive: oklch(0.5 0.22 25);
-  --border: oklch(0.75 0.04 50);
-  --input: oklch(0.94 0.03 95);
+  --destructive-foreground: oklch(0.98 0.02 95);
+  --border: oklch(0.72 0.04 50);
+  --input: oklch(0.68 0.04 50);
   --ring: oklch(0.3 0.02 50);
 
   --card: oklch(0.99 0.01 95);
@@ -184,8 +188,9 @@
   --muted-foreground: oklch(0.8 0.05 95);
 
   --destructive: oklch(0.55 0.22 25);
-  --border: oklch(0.35 0.03 50);
-  --input: oklch(0.25 0.03 50);
+  --destructive-foreground: oklch(0.98 0.02 95);
+  --border: oklch(0.4 0.03 50);
+  --input: oklch(0.48 0.03 50);
   --ring: var(--primary);
 
   --card: oklch(0.22 0.02 50);
@@ -214,6 +219,13 @@
     @apply text-foreground;
     font-family: var(--font-geist-sans), ui-sans-serif, sans-serif;
     background: var(--background);
+    /* URLs e palavras longas coladas não devem gerar scroll horizontal na página */
+    overflow-wrap: break-word;
+  }
+  img,
+  video,
+  iframe {
+    max-width: 100%;
   }
   html.theme-principia body {
     font-family: var(--font-principia), var(--font-geist-sans), ui-sans-serif, sans-serif;
@@ -230,8 +242,13 @@
 .chaos-card {
   border-radius: var(--radius-chaos);
   box-shadow: var(--chaos-shadow);
-  border-width: 2px;
+  border-width: 1px;
   border-style: solid;
+  border-color: var(--border);
+}
+/* A borda grossa em cor de texto é parte da identidade da skin Principia. */
+.theme-principia .chaos-card {
+  border-width: 2px;
   border-color: var(--foreground);
 }
 .chaos-heading {

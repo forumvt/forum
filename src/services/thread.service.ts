@@ -1,6 +1,6 @@
+import * as threadRepo from "@/repositories/thread.repository";
 import type { FilterType } from "@/types/filters";
 import type { ThreadBySlug, ThreadListItem } from "@/types/thread";
-import * as threadRepo from "@/repositories/thread.repository";
 
 function generateSlug(title: string): string {
   const randomString = Math.random().toString(36).substring(2, 7);

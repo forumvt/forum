@@ -4,11 +4,11 @@ export function HomeSkeleton() {
   return (
     <div className="flex flex-col gap-8 lg:flex-row">
       {/* Main Content */}
-      <div className="flex-1 space-y-4">
+      <div className="min-w-0 flex-1 space-y-4">
         {Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
-            className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6"
+            className="border-border bg-card rounded-lg border p-4 sm:p-6"
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
               {/* Avatar Skeleton */}
@@ -41,8 +41,8 @@ export function HomeSkeleton() {
       </div>
 
       {/* Sidebar Skeleton */}
-      <aside className="lg:w-80">
-        <div className="space-y-6">
+      <aside className="w-full shrink-0 lg:w-80">
+        <div className="space-y-4">
           <Skeleton className="h-64 w-full rounded-lg" />
           <Skeleton className="h-48 w-full rounded-lg" />
         </div>

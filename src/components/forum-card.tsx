@@ -36,7 +36,7 @@ export function ForumCard({
   return (
     <Card
       className={cn(
-        "overflow-hidden border border-gray-200 shadow-sm transition-all duration-300 hover:border-gray-300",
+        "border-border hover:border-primary/40 overflow-hidden border shadow-sm transition-all duration-300",
         className,
       )}
     >
@@ -59,7 +59,7 @@ export function ForumCard({
         </div>
       </div>
 
-      <CardContent className="relative -mt-10 rounded-t-xl border border-gray-200 bg-white p-4">
+      <CardContent className="border-border bg-card relative -mt-10 rounded-t-xl border p-4">
         <div className="flex items-center gap-3">
           <Image
             src={
@@ -69,19 +69,19 @@ export function ForumCard({
             alt=""
             width={32}
             height={32}
-            className="rounded border border-gray-300"
+            className="border-border size-8 shrink-0 rounded border object-cover"
           />
           <div className="min-w-0 text-sm">
             <p className="truncate">
-              <span className="font-medium text-gray-700">{last.user}</span>
-              <Dot className="mx-1 inline size-4 text-gray-500" />
-              <span className="text-gray-600">{last.text}</span>
+              <span className="text-foreground font-medium">{last.user}</span>
+              <Dot className="text-muted-foreground mx-1 inline size-4" />
+              <span className="text-muted-foreground">{last.text}</span>
             </p>
-            <p className="text-xs text-gray-500">{last.ago}</p>
+            <p className="text-muted-foreground text-xs">{last.ago}</p>
           </div>
           <a
             href="#"
-            className="ml-auto inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
+            className="text-primary ml-auto inline-flex shrink-0 items-center text-sm hover:underline"
           >
             Mais <ChevronRight className="ml-0.5 size-4" />
           </a>

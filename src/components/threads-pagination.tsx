@@ -56,13 +56,16 @@ export function ThreadsPagination({
   );
 
   return (
-    <div className="flex flex-col gap-4 border-t border-gray-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-      <p className="text-sm text-gray-600">
+    <nav
+      aria-label="Paginação de tópicos"
+      className="border-border flex flex-col gap-4 border-t pt-4 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <p className="text-muted-foreground text-sm">
         Mostrando <span className="font-medium">{start}</span>–
         <span className="font-medium">{end}</span> de{" "}
         <span className="font-medium">{totalItems}</span> tópicos
       </p>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-center gap-2">
         {prevUrl ? (
           <Button variant="outline" size="sm" asChild>
             <Link href={prevUrl as never}>
@@ -80,10 +83,14 @@ export function ThreadsPagination({
         <div className="flex items-center gap-1">
           {pageStart > 1 && (
             <>
-              <Button variant="outline" size="icon" className="h-8 w-8" asChild>
+              <Button variant="outline" size="icon" className="size-8" asChild>
                 <Link href={build(1) as never}>1</Link>
               </Button>
-              {pageStart > 2 && <span className="px-1 text-gray-400">…</span>}
+              {pageStart > 2 && (
+                <span aria-hidden="true" className="text-muted-foreground px-1">
+                  …
+                </span>
+              )}
             </>
           )}
           {pageNumbers.map((n) =>
@@ -92,7 +99,9 @@ export function ThreadsPagination({
                 key={n}
                 variant="default"
                 size="icon"
-                className="h-8 w-8"
+                className="size-8"
+                aria-current="page"
+                aria-label={`Página ${n}, página atual`}
                 disabled
               >
                 {n}
@@ -102,25 +111,27 @@ export function ThreadsPagination({
                 key={n}
                 variant="outline"
                 size="icon"
-                className="h-8 w-8"
+                className="size-8"
                 asChild
               >
-                <Link href={build(n) as never}>{n}</Link>
+                <Link href={build(n) as never} aria-label={`Página ${n}`}>
+                  {n}
+                </Link>
               </Button>
             ),
           )}
           {pageEnd < totalPages && (
             <>
               {pageEnd < totalPages - 1 && (
-                <span className="px-1 text-gray-400">…</span>
+                <span aria-hidden="true" className="text-muted-foreground px-1">
+                  …
+                </span>
               )}
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                asChild
-              >
-                <Link href={build(totalPages) as never}>
+              <Button variant="outline" size="icon" className="size-8" asChild>
+                <Link
+                  href={build(totalPages) as never}
+                  aria-label={`Página ${totalPages}`}
+                >
                   {totalPages}
                 </Link>
               </Button>
@@ -142,6 +153,6 @@ export function ThreadsPagination({
           </Button>
         )}
       </div>
-    </div>
+    </nav>
   );
 }

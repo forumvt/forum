@@ -24,10 +24,9 @@ import {
 } from "./ui/dropdown-menu";
 import { SidebarTrigger } from "./ui/sidebar";
 
-export function SiteHeaderClient({ user }: { user?: any }) {
-  console.log("user");
+type SessionUser = typeof authClient.$Infer.Session.user;
 
-  console.log(user);
+export function SiteHeaderClient({ user }: { user?: SessionUser }) {
   return (
     <header className="bg-background/80 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-30 border-b backdrop-blur">
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-4">

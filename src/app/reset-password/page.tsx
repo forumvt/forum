@@ -27,8 +27,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
 import {
-  type ResetPasswordFormValues,
   resetPasswordFormSchema,
+  type ResetPasswordFormValues,
 } from "@/lib/register-schema";
 
 function ResetPasswordForm() {
@@ -52,7 +52,7 @@ function ResetPasswordForm() {
 
   if (errorParam === "INVALID_TOKEN") {
     return (
-      <Card className="bg-background shadow-lg">
+      <Card className="bg-card shadow-lg">
         <CardHeader>
           <CardTitle className="text-center text-2xl">
             Link inválido ou expirado
@@ -72,7 +72,7 @@ function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <Card className="bg-background shadow-lg">
+      <Card className="bg-card shadow-lg">
         <CardHeader>
           <CardTitle className="text-center text-2xl">
             Token ausente
@@ -107,7 +107,7 @@ function ResetPasswordForm() {
   }
 
   return (
-    <Card className="bg-background shadow-lg">
+    <Card className="bg-card shadow-lg">
       <CardHeader className="space-y-1">
         <CardTitle className="text-center text-2xl">Nova senha</CardTitle>
         <CardDescription className="text-center">
@@ -124,7 +124,7 @@ function ResetPasswordForm() {
                 <FormItem>
                   <FormLabel>Nova senha</FormLabel>
                   <div className="relative">
-                    <Lock className="absolute top-3 left-3 h-4 w-4 text-muted-foreground" />
+                    <Lock className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
                     <FormControl>
                       <Input
                         type={showPassword ? "text" : "password"}
@@ -136,15 +136,14 @@ function ResetPasswordForm() {
                     <Button
                       type="button"
                       variant="ghost"
-                      size="sm"
-                      className="absolute top-0 right-0 h-full px-3 py-2 hover:bg-transparent"
+                      size="icon"
+                      className="text-muted-foreground absolute top-1/2 right-1 size-7 -translate-y-1/2"
+                      aria-label={
+                        showPassword ? "Ocultar senha" : "Mostrar senha"
+                      }
                       onClick={() => setShowPassword((s) => !s)}
                     >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-muted-foreground" />
-                      )}
+                      {showPassword ? <EyeOff /> : <Eye />}
                     </Button>
                   </div>
                   <FormMessage />
@@ -158,7 +157,7 @@ function ResetPasswordForm() {
                 <FormItem>
                   <FormLabel>Confirmar nova senha</FormLabel>
                   <div className="relative">
-                    <Lock className="absolute top-3 left-3 h-4 w-4 text-muted-foreground" />
+                    <Lock className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
                     <FormControl>
                       <Input
                         type={showConfirm ? "text" : "password"}
@@ -170,15 +169,16 @@ function ResetPasswordForm() {
                     <Button
                       type="button"
                       variant="ghost"
-                      size="sm"
-                      className="absolute top-0 right-0 h-full px-3 py-2 hover:bg-transparent"
+                      size="icon"
+                      className="text-muted-foreground absolute top-1/2 right-1 size-7 -translate-y-1/2"
+                      aria-label={
+                        showConfirm
+                          ? "Ocultar confirmação de senha"
+                          : "Mostrar confirmação de senha"
+                      }
                       onClick={() => setShowConfirm((s) => !s)}
                     >
-                      {showConfirm ? (
-                        <EyeOff className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-muted-foreground" />
-                      )}
+                      {showConfirm ? <EyeOff /> : <Eye />}
                     </Button>
                   </div>
                   <FormMessage />
@@ -197,8 +197,8 @@ function ResetPasswordForm() {
 
 function ResetPasswordFallback() {
   return (
-    <Card className="bg-background shadow-lg">
-      <CardContent className="pt-8 pb-8 text-center text-muted-foreground text-sm">
+    <Card className="bg-card shadow-lg">
+      <CardContent className="text-muted-foreground py-8 text-center text-sm">
         Carregando…
       </CardContent>
     </Card>
@@ -207,8 +207,8 @@ function ResetPasswordFallback() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="flex min-h-[100vh] flex-1 flex-col gap-4 p-4 pt-0">
-      <div className="flex flex-1 items-center justify-center rounded-xl bg-muted/50 p-6 md:min-h-min">
+    <div className="flex min-h-[calc(100dvh-3.5rem)] flex-1 flex-col gap-4 p-4">
+      <div className="bg-muted/50 flex flex-1 items-center justify-center rounded-xl px-4 py-8 sm:p-6">
         <div className="w-full max-w-md space-y-6">
           <Suspense fallback={<ResetPasswordFallback />}>
             <ResetPasswordForm />

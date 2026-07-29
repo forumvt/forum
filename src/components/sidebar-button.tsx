@@ -7,19 +7,22 @@ import { Button } from "./ui/button";
 
 interface SidebarButtonProps {
   children: React.ReactNode;
-  href: string; // string normal
+  href: React.ComponentProps<typeof Link>["href"];
 }
 
 const SidebarButton = ({ children, href }: SidebarButtonProps) => {
   const pathName = usePathname();
+  const isActive = pathName === href;
 
   return (
     <Button
-      variant={pathName === href ? "secondary" : "ghost"}
-      className="justify-start gap-2"
+      variant={isActive ? "secondary" : "ghost"}
+      className="w-full justify-start gap-2"
       asChild
     >
-      <Link href={href as any}>{children}</Link>
+      <Link href={href} aria-current={isActive ? "page" : undefined}>
+        {children}
+      </Link>
     </Button>
   );
 };

@@ -7,6 +7,9 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import type { ForumListItem } from "@/types/forum";
 
 function scrollToCreatedThread(threadId: string) {
@@ -85,23 +88,25 @@ export function CreateThread({ forums }: { forums: ForumListItem[] }) {
     <>
       <Button
         onClick={() => setOpen((v) => !v)}
-        className="bg-primary text-primary-foreground hover:opacity-90 px-4 py-2 font-medium shadow-lg sm:px-6 sm:py-3"
         size="lg"
+        className="w-full font-medium shadow-lg sm:w-auto"
+        aria-expanded={open}
+        aria-controls="form-criar-topico"
       >
-        <PlusIcon className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+        <PlusIcon className="size-4 sm:size-5" />
         <span className="text-sm sm:text-base">Criar Tópico</span>
       </Button>
 
       {open && (
-        <Card className="mt-6 p-6">
+        <Card id="form-criar-topico" className="mt-6 p-4 sm:p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Fórum */}
-            <div>
-              <label className="mb-1 block text-sm font-medium">Fórum</label>
+            <div className="space-y-2">
+              <Label htmlFor="novo-topico-forum">Fórum</Label>
               <select
+                id="novo-topico-forum"
                 name="forumId"
-                className="w-full rounded border p-2"
                 required
+                className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
               >
                 <option value="">Selecione um fórum</option>
                 {forums.map((forum) => (
@@ -112,34 +117,30 @@ export function CreateThread({ forums }: { forums: ForumListItem[] }) {
               </select>
             </div>
 
-            {/* Título */}
-            <div>
-              <label className="mb-1 block text-sm font-medium">
-                Título do tópico
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="novo-topico-titulo">Título do tópico</Label>
+              <Input
                 ref={titleRef}
+                id="novo-topico-titulo"
                 type="text"
                 name="title"
-                className="w-full rounded border p-2"
                 required
               />
             </div>
 
-            {/* Texto */}
-            <div>
-              <label className="mb-1 block text-sm font-medium">Conteúdo</label>
-              <textarea
+            <div className="space-y-2">
+              <Label htmlFor="novo-topico-conteudo">Conteúdo</Label>
+              <Textarea
                 ref={contentRef}
+                id="novo-topico-conteudo"
                 name="content"
                 rows={5}
-                className="w-full rounded border p-2"
                 required
+                className="min-h-32"
               />
             </div>
 
-            <div className="flex gap-2">
-              <Button type="submit">Publicar</Button>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button
                 type="button"
                 variant="outline"
@@ -147,6 +148,7 @@ export function CreateThread({ forums }: { forums: ForumListItem[] }) {
               >
                 Cancelar
               </Button>
+              <Button type="submit">Publicar</Button>
             </div>
           </form>
         </Card>

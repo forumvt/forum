@@ -7,11 +7,11 @@ import {
   Home,
   MessageSquare,
   MessageSquareText,
-  Newspaper,
   Settings,
-  Sparkles,
   TvIcon,
 } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import {
   Collapsible,
@@ -46,22 +46,30 @@ const mainNav = [
 ];
 
 export function ForumSidebar(props: React.ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname();
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNav.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {mainNav.map((item) => {
+                const isActive = item.url !== "#" && pathname === item.url;
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild isActive={isActive}>
+                      <Link
+                        href={item.url as never}
+                        aria-current={isActive ? "page" : undefined}
+                      >
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
               <SidebarMenuItem>
                 <Collapsible defaultOpen className="group/topicos">
                   <CollapsibleTrigger asChild>
@@ -75,16 +83,16 @@ export function ForumSidebar(props: React.ComponentProps<typeof Sidebar>) {
                     <SidebarMenuSub>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton asChild>
-                          <a href="/?filter=answered-by-me">
+                          <Link href="/?filter=answered-by-me">
                             Respondidos por mim
-                          </a>
+                          </Link>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton asChild>
-                          <a href="/?filter=viewed-by-me">
+                          <Link href="/?filter=viewed-by-me">
                             Visualizadas por mim
-                          </a>
+                          </Link>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     </SidebarMenuSub>
@@ -99,19 +107,14 @@ export function ForumSidebar(props: React.ComponentProps<typeof Sidebar>) {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <a href="#">
-                <Sparkles />
-                <span>Modo Escuro</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <a href="#">
+            <SidebarMenuButton asChild isActive={pathname === "/settings"}>
+              <Link
+                href="/settings"
+                aria-current={pathname === "/settings" ? "page" : undefined}
+              >
                 <Settings />
                 <span>Configurações</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

@@ -1,17 +1,16 @@
 import { Clock, MessageSquare, User } from "lucide-react";
 import { headers } from "next/headers";
-import Link from "next/link";
 import { Suspense } from "react";
 
 import { CreateThread } from "@/components/create-thread";
 import { HomeSkeleton } from "@/components/home-skeleton";
 import { RightRail } from "@/components/right-rail";
+import { ThreadFilters } from "@/components/thread-filters";
 import { ThreadTitleWithPreview } from "@/components/thread-title-with-preview";
 import { ThreadsPagination } from "@/components/threads-pagination";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { auth } from "@/lib/auth";
-import { cn } from "@/lib/utils";
 import * as forumService from "@/services/forum.service";
 import * as threadService from "@/services/thread.service";
 import type { FilterType } from "@/types/filters";
@@ -52,8 +51,6 @@ async function HomeContent({
   } = listResult;
 
   const basePath = "/";
-  const filterParams = (f: string) =>
-    f === "all" ? basePath : `${basePath}?filter=${f}`;
 
   return (
     <>
@@ -61,66 +58,19 @@ async function HomeContent({
         {session?.user && <CreateThread forums={forums} />}
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        <Link
-          href={filterParams("all") as never}
-          className={cn(
-            "border-2 border-foreground px-3 py-1.5 text-sm font-medium transition-colors",
-            filter === "all"
-              ? "bg-foreground text-background"
-              : "bg-card text-foreground hover:bg-muted"
-          )}
-        >
-          Todos
-        </Link>
-        {session?.user && (
-          <>
-            <Link
-              href={`${basePath}?filter=answered-by-me`}
-              className={cn(
-                "border-2 border-foreground px-3 py-1.5 text-sm font-medium transition-colors",
-                filter === "answered-by-me"
-                  ? "bg-foreground text-background"
-                  : "bg-card text-foreground hover:bg-muted"
-              )}
-            >
-              Respondidos por mim
-            </Link>
-            <Link
-              href={`${basePath}?filter=viewed-by-me`}
-              className={cn(
-                "border-2 border-foreground px-3 py-1.5 text-sm font-medium transition-colors",
-                filter === "viewed-by-me"
-                  ? "bg-foreground text-background"
-                  : "bg-card text-foreground hover:bg-muted"
-              )}
-            >
-              Visualizadas por mim
-            </Link>
-          </>
-        )}
-        <Link
-          href={`${basePath}?filter=unanswered`}
-          className={cn(
-            "border-2 border-foreground px-3 py-1.5 text-sm font-medium transition-colors",
-            filter === "unanswered"
-              ? "bg-foreground text-background"
-              : "bg-card text-foreground hover:bg-muted"
-          )}
-        >
-          Sem respostas
-        </Link>
-      </div>
+      <ThreadFilters
+        active={filter}
+        basePath={basePath}
+        showAuthFilters={!!session?.user}
+      />
 
       <div
         id="lista-topicos"
         className="flex flex-col gap-8 scroll-mt-4 lg:flex-row"
       >
         {threads.length === 0 ? (
-          <div className="bg-muted/50 border-border rounded-lg border py-12 text-center">
-            <div className="mb-4">
-              <MessageSquare className="text-muted-foreground mx-auto h-16 w-16" />
-            </div>
+          <div className="bg-muted/50 border-border w-full flex-1 rounded-lg border px-4 py-12 text-center">
+            <MessageSquare className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
             <h3 className="text-foreground mb-2 text-xl font-bold">
               Ainda não há tópicos
             </h3>
@@ -132,7 +82,7 @@ async function HomeContent({
             </p>
           </div>
         ) : (
-          <div className="flex-1 space-y-4">
+          <div className="min-w-0 flex-1 space-y-4">
             {threads.map((thread) => (
               <Card
                 key={thread.id}
@@ -230,7 +180,7 @@ async function HomeContent({
           </div>
         )}
 
-        <aside className="lg:w-80">
+        <aside className="w-full shrink-0 lg:w-80">
           <RightRail />
         </aside>
       </div>
@@ -250,7 +200,7 @@ export default async function Home({
           VT Forums
         </h1>
         <p className="text-muted-foreground text-lg">Bem-vindo ao fórum</p>
-        <p className="text-accent mt-1 text-sm font-medium uppercase tracking-widest">
+        <p className="text-primary mt-1 text-sm font-medium tracking-widest uppercase">
           All Hail Eris! All Hail Discordia!
         </p>
       </div>

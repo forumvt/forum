@@ -1,9 +1,9 @@
-import { Suspense } from "react"
 import { redirect } from "next/navigation"
+import { Suspense } from "react"
 
 import { AvatarSettings } from "@/components/avatar-settings"
-import { auth } from "@/lib/auth"
 import { SettingsSkeleton } from "@/components/settings-skeleton"
+import { auth } from "@/lib/auth"
 
 async function SettingsContent() {
   const session = await auth.api.getSession({
@@ -17,12 +17,14 @@ async function SettingsContent() {
   return (
     <>
       <div>
-        <h1 className="text-3xl font-bold">Configurações</h1>
-        <p className="text-muted-foreground">Gerencie suas configurações de conta e preferências.</p>
+        <h1 className="text-2xl font-bold sm:text-3xl">Configurações</h1>
+        <p className="text-muted-foreground">
+          Gerencie suas configurações de conta e preferências.
+        </p>
       </div>
 
-      <div className="rounded-lg border bg-card p-6">
-        <h2 className="text-xl font-semibold mb-4">Avatar</h2>
+      <div className="border-border bg-card rounded-lg border p-6">
+        <h2 className="mb-4 text-xl font-semibold">Avatar</h2>
         <AvatarSettings user={session.user} />
       </div>
     </>
@@ -31,7 +33,7 @@ async function SettingsContent() {
 
 export default function SettingsPage() {
   return (
-    <div className="container mx-auto max-w-2xl py-8">
+    <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
       <div className="space-y-6">
         <Suspense fallback={<SettingsSkeleton />}>
           <SettingsContent />

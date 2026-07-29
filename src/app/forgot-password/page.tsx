@@ -25,8 +25,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { authClient } from "@/lib/auth-client";
 import { getPublicAppUrl } from "@/lib/app-url";
+import { authClient } from "@/lib/auth-client";
 
 const formSchema = z.object({
   email: z.email("E-mail inválido."),
@@ -64,10 +64,10 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-[100vh] flex-1 flex-col gap-4 p-4 pt-0">
-      <div className="flex flex-1 items-center justify-center rounded-xl bg-muted/50 p-6 md:min-h-min">
+    <div className="flex min-h-[calc(100dvh-3.5rem)] flex-1 flex-col gap-4 p-4">
+      <div className="bg-muted/50 flex flex-1 items-center justify-center rounded-xl px-4 py-8 sm:p-6">
         <div className="w-full max-w-md space-y-6">
-          <Card className="bg-background shadow-lg">
+          <Card className="bg-card shadow-lg">
             <CardHeader className="space-y-1">
               <CardTitle className="text-center text-2xl">
                 Esqueci a senha
@@ -95,7 +95,7 @@ export default function ForgotPasswordPage() {
                         <FormItem>
                           <FormLabel>E-mail</FormLabel>
                           <div className="relative">
-                            <Mail className="absolute top-3 left-3 h-4 w-4 text-muted-foreground" />
+                            <Mail className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
                             <FormControl>
                               <Input
                                 type="email"

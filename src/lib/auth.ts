@@ -4,12 +4,12 @@ import { APIError, createAuthMiddleware } from "better-auth/api";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { getTrustedOrigins } from "@/lib/auth-cors";
 import { sendEmail } from "@/lib/email";
 import {
   normalizeEmailStripBrDomain,
   validateRegistrationCredentials,
 } from "@/lib/register-validation";
-import { getTrustedOrigins } from "@/lib/auth-cors";
 
 const authBaseUrl =
   process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "";

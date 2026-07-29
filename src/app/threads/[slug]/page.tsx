@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 
-import { ThreadClient } from "@/components/thread-client-props";
 import { PostsPagination } from "@/components/posts-pagination";
+import { ThreadClient } from "@/components/thread-client-props";
 import { auth } from "@/lib/auth";
 import * as postService from "@/services/post.service";
 import * as threadService from "@/services/thread.service";
@@ -92,7 +92,7 @@ export default async function ThreadPage({
   ];
 
   return (
-    <>
+    <div className="bg-background min-h-screen">
       <ThreadClient
         posts={displayPosts}
         threadId={thread.id}
@@ -107,13 +107,15 @@ export default async function ThreadPage({
           createdAt: thread.createdAt,
         }}
       />
-      <PostsPagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={totalCount}
-        per={per}
-        basePath={`/threads/${slug}`}
-      />
-    </>
+      <div className="mx-auto w-full max-w-7xl px-4 pb-10 sm:px-6">
+        <PostsPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalCount}
+          per={per}
+          basePath={`/threads/${slug}`}
+        />
+      </div>
+    </div>
   );
 }

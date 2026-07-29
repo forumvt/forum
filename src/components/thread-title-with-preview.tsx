@@ -34,13 +34,16 @@ export function ThreadTitleWithPreview({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Link href={`/threads/${slug}`}>
+        <Link
+          href={`/threads/${slug}`}
+          className="focus-visible:ring-ring block rounded-sm outline-none focus-visible:ring-[3px]"
+        >
           <h3
             className={cn(
-              "mb-1 line-clamp-2 text-base font-bold transition-colors hover:text-blue-600 hover:underline sm:text-lg",
+              "hover:text-primary mb-1 line-clamp-2 text-base font-bold break-words transition-colors hover:underline sm:text-lg",
               isUnread
-                ? "font-bold text-black dark:text-white"
-                : "font-normal text-gray-600 dark:text-gray-400",
+                ? "text-foreground font-bold"
+                : "text-muted-foreground font-normal",
             )}
           >
             {title}

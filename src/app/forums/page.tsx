@@ -1,15 +1,12 @@
-import { Suspense } from "react";
 import { Crown, MessageSquare, Zap } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 
+import { ForumsListSkeleton } from "@/components/forums-list-skeleton";
 import { RightRail } from "@/components/right-rail";
-import { SiteHeaderClient } from "@/components/site-header-client";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { SidebarInset } from "@/components/ui/sidebar";
 import { db } from "@/db";
-import { forumTable } from "@/db/schema";
-import { ForumsListSkeleton } from "@/components/forums-list-skeleton";
 
 /** Evita pré-render estático no build sem acesso ao Postgres (ex.: CI sem DATABASE_URL). */
 export const dynamic = "force-dynamic";
@@ -55,7 +52,7 @@ async function ForumsListContent() {
   return (
     <div className="flex flex-col gap-8 lg:flex-row">
       {/* Conteúdo principal */}
-      <div className="flex-1 space-y-8">
+      <div className="min-w-0 flex-1 space-y-8">
         {grouped.map(
           (cat) =>
             cat.forums.length > 0 && (
@@ -64,13 +61,10 @@ async function ForumsListContent() {
                 <div
                   className={`${cat.color} rounded-lg p-4 text-white shadow-lg`}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     {cat.icon}
                     <h3 className="text-xl font-bold">{cat.label}</h3>
-                    <Badge
-                      variant="secondary"
-                      className="bg-white/20 text-white"
-                    >
+                    <Badge className="border-white/30 bg-white/20 text-white">
                       {cat.forums.length} Fóruns
                     </Badge>
                   </div>
@@ -82,20 +76,19 @@ async function ForumsListContent() {
                   {cat.forums.map((forum) => (
                     <Card
                       key={forum.id}
-                      className="group border border-gray-200 transition-all duration-300 hover:border-gray-300 hover:shadow-md"
+                      className="group border-border hover:border-primary/40 h-full transition-all duration-300 hover:shadow-md"
                     >
                       <CardContent className="p-4">
                         <div className="space-y-2">
-                          <h4 className="text-lg font-bold transition-colors group-hover:text-blue-600">
+                          <h4 className="group-hover:text-primary text-lg font-bold break-words transition-colors">
                             <Link
-                              className="hover:underline"
+                              className="focus-visible:ring-ring rounded-sm outline-none hover:underline focus-visible:ring-[3px]"
                               href={`/forums/${forum.slug}`}
                             >
-                              {" "}
-                              {forum.title}{" "}
+                              {forum.title}
                             </Link>
                           </h4>
-                          <p className="line-clamp-2 text-sm text-gray-600">
+                          <p className="text-muted-foreground line-clamp-2 text-sm">
                             {forum.description}
                           </p>
                         </div>
@@ -109,7 +102,7 @@ async function ForumsListContent() {
       </div>
 
       {/* Barra lateral */}
-      <aside className="lg:w-80">
+      <aside className="w-full shrink-0 lg:w-80">
         <RightRail />
       </aside>
     </div>
@@ -121,18 +114,20 @@ export default function Home() {
     <main className="mx-auto w-full max-w-7xl px-4 py-6">
       {/* Header */}
       <div className="mb-8 text-center">
-        <h1 className="mb-2 text-4xl font-bold text-gray-900">VT Forums</h1>
-        <p className="text-lg text-gray-600">
+        <h1 className="chaos-heading mb-2 text-3xl font-bold md:text-4xl">
+          VT Forums
+        </h1>
+        <p className="text-muted-foreground text-lg">
           Bem-vindo ao nosso fórum de discussão
         </p>
       </div>
 
       {/* Navigation */}
       <div className="mb-6">
-        <h2 className="mb-4 text-2xl font-bold text-gray-800">
+        <h2 className="text-foreground mb-4 text-2xl font-bold">
           Fóruns de Discussão
         </h2>
-        <p className="mb-6 text-gray-600">
+        <p className="text-muted-foreground mb-6">
           Participe de discussões sobre diversos temas. Mantenha o respeito e
           contribua com conteúdo de qualidade.
         </p>

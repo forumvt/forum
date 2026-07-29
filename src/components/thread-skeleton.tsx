@@ -2,8 +2,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function ThreadSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-7xl space-y-6 p-6">
+    <div className="bg-background min-h-screen">
+      <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6">
         <div className="mb-8 text-center">
           <Skeleton className="mx-auto h-10 w-64" />
         </div>
@@ -12,7 +12,7 @@ export function ThreadSkeleton() {
         <Skeleton className="h-10 w-64 rounded-lg" />
 
         {/* Thread Header Skeleton */}
-        <div className="mb-6 rounded-lg bg-gray-200 p-6 shadow-lg">
+        <div className="bg-muted mb-6 rounded-lg p-6 shadow-lg">
           <Skeleton className="mb-4 h-8 w-3/4" />
           <div className="flex gap-6">
             <Skeleton className="h-5 w-32" />
@@ -25,10 +25,10 @@ export function ThreadSkeleton() {
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="flex overflow-hidden rounded-lg border border-gray-200 bg-white"
+              className="border-border bg-card flex overflow-hidden rounded-lg border"
             >
               {/* Desktop Sidebar Skeleton */}
-              <div className="hidden w-48 border-r bg-gray-50 p-4 md:block">
+              <div className="border-border bg-muted hidden w-48 shrink-0 border-r p-4 md:block">
                 <Skeleton className="mx-auto mb-2 h-36 w-36" />
                 <Skeleton className="mx-auto h-5 w-24" />
               </div>

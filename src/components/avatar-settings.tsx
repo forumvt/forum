@@ -60,12 +60,9 @@ export function AvatarSettings({ user }: AvatarSettingsProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
-        <Avatar className="h-20 w-20 border-2 border-gray-300">
-          <AvatarImage
-            src={previewUrl || undefined}
-            alt={user.name || "Usuário"}
-          />
-          <AvatarFallback className="bg-gray-100 text-lg text-gray-600">
+        <Avatar className="border-border size-20 shrink-0 border-2">
+          <AvatarImage src={previewUrl || undefined} alt="" />
+          <AvatarFallback className="bg-muted text-muted-foreground text-lg">
             {user.name?.split(" ")?.[0]?.[0]}
             {user.name?.split(" ")?.[1]?.[0]}
           </AvatarFallback>
@@ -90,31 +87,26 @@ export function AvatarSettings({ user }: AvatarSettingsProps) {
               }
             }}
           >
-            <Button
-              type="button"
-              variant="outline"
-              className="border-gray-300 text-gray-700 hover:bg-gray-50"
-            >
-              <Upload className="mr-2 h-4 w-4" />
+            <Button type="button" variant="outline">
+              <Upload />
               Alterar Avatar
             </Button>
           </CldUploadButton>
           {previewUrl && (
             <Button
               type="button"
-              variant="outline"
+              variant="destructive"
               size="sm"
               onClick={handleRemoveAvatar}
-              className="border-gray-300 text-gray-700 hover:bg-gray-50"
             >
-              <X className="mr-2 h-4 w-4" />
+              <X />
               Remover Avatar
             </Button>
           )}
         </div>
       </div>
 
-      <p className="text-sm text-gray-600">
+      <p className="text-muted-foreground text-sm">
         Upload direto no Cloudinary. Formatos aceitos: JPG, PNG, GIF.
       </p>
     </div>

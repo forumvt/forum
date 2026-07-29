@@ -1,13 +1,13 @@
 import { z } from "zod";
 
 import {
+  isEmailDomainAllowed,
+  normalizeEmailStripBrDomain,
+  parseAllowedEmailDomains,
   REGISTER_MSG_EMAIL_CONFIG,
   REGISTER_MSG_EMAIL_DOMAIN,
   REGISTER_MSG_PASSWORD_EQUALS_EMAIL,
   REGISTER_MSG_PASSWORD_ONLY_LOWERCASE,
-  isEmailDomainAllowed,
-  normalizeEmailStripBrDomain,
-  parseAllowedEmailDomains,
 } from "@/lib/register-validation";
 
 const registerFields = z.object({

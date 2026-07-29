@@ -1,49 +1,43 @@
 import { MessageSquare, Users } from "lucide-react";
+import { headers } from "next/headers";
 import Link from "next/link";
 
 import { OnlineStats } from "@/components/online/online-stats";
 import { Card, CardContent } from "@/components/ui/card";
 import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import * as statsService from "@/services/stats.service";
+
+const filterLinkClass =
+  "text-foreground hover:bg-muted focus-visible:ring-ring rounded-md px-3 py-2 text-sm transition-colors outline-none focus-visible:ring-[3px]";
 
 export async function RightRail() {
   const totals = await statsService.getTotals();
   const session = await auth.api.getSession({ headers: await headers() });
 
   return (
-    <div className="flex w-full flex-col gap-4 lg:w-80">
+    <div className="flex w-full flex-col gap-4">
       {/* Filtros rápidos — Principia */}
       <Card className="chaos-card border-border bg-card border">
         <CardContent className="p-4">
           <h4 className="chaos-heading mb-3 font-semibold">Filtros</h4>
           <div className="flex flex-col gap-2">
-            <Link
-              href="/"
-              className="rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
-            >
+            <Link href="/" className={filterLinkClass}>
               Todos os tópicos
             </Link>
             {session?.user && (
               <>
                 <Link
                   href="/?filter=answered-by-me"
-                  className="rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
+                  className={filterLinkClass}
                 >
                   Respondidos por mim
                 </Link>
-                <Link
-                  href="/?filter=viewed-by-me"
-                  className="rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
-                >
+                <Link href="/?filter=viewed-by-me" className={filterLinkClass}>
                   Visualizadas por mim
                 </Link>
               </>
             )}
-            <Link
-              href="/?filter=unanswered"
-              className="rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
-            >
+            <Link href="/?filter=unanswered" className={filterLinkClass}>
               Sem respostas
             </Link>
           </div>

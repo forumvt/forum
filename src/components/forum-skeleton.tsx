@@ -2,15 +2,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function ForumSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-7xl space-y-6 p-6">
+    <div className="bg-background min-h-screen">
+      <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6">
         {/* Header Title Skeleton */}
         <div className="mb-6 text-center sm:mb-8">
           <Skeleton className="mx-auto h-8 w-32 sm:h-10" />
         </div>
 
         {/* Forum Header Skeleton */}
-        <div className="rounded-lg bg-gray-200 p-4 shadow-lg sm:p-6">
+        <div className="bg-muted rounded-lg p-4 shadow-lg sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-2">
               <Skeleton className="h-8 w-64" />
@@ -31,7 +31,7 @@ export function ForumSkeleton() {
           {Array.from({ length: 5 }).map((_, i) => (
             <div
               key={i}
-              className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6"
+              className="border-border bg-card rounded-lg border p-4 sm:p-6"
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                 <div className="flex items-center gap-3 sm:flex-col sm:items-center">
