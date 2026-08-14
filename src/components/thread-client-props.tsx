@@ -14,6 +14,8 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { authClient } from "@/lib/auth-client";
+import { canEditPost, getSessionRole } from "@/lib/permissions";
 import type { ThreadClientProps as ThreadClientPropsType } from "@/types/thread";
 
 function ThreadHeader({
@@ -51,9 +53,13 @@ export function ThreadClient({
   forumTitle,
   userId,
   isAuthenticated,
+  currentUserRole,
   thread,
 }: ThreadClientPropsType) {
   const replyFormRef = useRef<ReplyFormHandle | null>(null);
+  const { data: session } = authClient.useSession();
+  const actorId = session?.user?.id || userId;
+  const actorRole = getSessionRole(session?.user) ?? currentUserRole;
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6">
@@ -97,18 +103,9 @@ export function ThreadClient({
         {posts.map((post) => (
           <PostCard
             key={post.id}
-            post={{
-              id: post.id,
-              author: post.author,
-              title: post.title,
-              joinDate: post.joinDate,
-              posts: post.posts,
-              likes: post.likes,
-              content: post.content,
-              timestamp: post.timestamp,
-              userAvatar: post.userAvatar ?? null,
-              isOriginalPoster: post.isOriginalPoster,
-            }}
+            post={post}
+            canEdit={canEditPost(actorId, actorRole, post.userId)}
+            threadSlug={threadSlug}
             onReply={(user, content) =>
               replyFormRef.current?.replyTo(user, content)
             }

@@ -1,128 +1,31 @@
 "use client";
 
-import { MessageSquare, ThumbsUp } from "lucide-react";
+import { Loader2, MessageSquare, Pencil, ThumbsUp } from "lucide-react";
+import { useState } from "react";
 
+import { BBCodeContent } from "@/components/bbcode-content";
+import { BBCodeEditor } from "@/components/bbcode-editor";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { Post } from "@/types/post";
-import { parseBBCode } from "@/utils/bbcode-parser";
 
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 
-interface BBCodeElement {
-  type: string;
-  content: string;
-  data?: {
-    url?: string;
-    id?: string;
-    username?: string;
-  };
-}
-
-// Componente para renderizar conteúdo BBCode
-function BBCodeContent({ content }: { content: string }) {
-  const elements = parseBBCode(content) as BBCodeElement[];
-
-  const renderElement = (element: BBCodeElement, index: number) => {
-    switch (element.type) {
-      case "text":
-        return (
-          <div
-            key={index}
-            className="prose prose-sm dark:prose-invert max-w-none"
-          >
-            <p className="text-foreground break-words whitespace-pre-wrap">
-              {element.content}
-            </p>
-          </div>
-        );
-
-      case "image":
-        return (
-          <div
-            key={index}
-            className="border-border overflow-hidden rounded-lg border shadow-md"
-          >
-            <img
-              src={element.data?.url || "/placeholder.svg"}
-              alt={`Imagem ${index + 1}`}
-              className="h-auto w-full object-contain"
-            />
-          </div>
-        );
-
-      case "youtube":
-        return (
-          <div
-            key={index}
-            className="border-border aspect-video overflow-hidden rounded-lg border shadow-md"
-          >
-            <iframe
-              src={`https://www.youtube.com/embed/${element.data?.id}`}
-              title={`Vídeo ${index + 1}`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="h-full w-full"
-            />
-          </div>
-        );
-
-      case "twitter":
-        return (
-          <div
-            key={index}
-            className="border-border bg-muted rounded-lg border p-4 shadow-md"
-          >
-            <div className="mb-2 flex items-center gap-2">
-              <div className="bg-foreground flex h-4 w-4 items-center justify-center rounded-sm">
-                <span className="text-background text-xs font-bold">𝕏</span>
-              </div>
-              <span className="text-muted-foreground text-sm">
-                Tweet incorporado
-              </span>
-            </div>
-            <a
-              href={
-                element.content.startsWith("http")
-                  ? element.content
-                  : `https://twitter.com/i/status/${element.data?.id}`
-              }
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary text-sm hover:underline"
-            >
-              Ver tweet original →
-            </a>
-          </div>
-        );
-
-      case "quote":
-        return (
-          <div
-            key={index}
-            className="border-border my-4 overflow-hidden rounded-md border bg-muted/50"
-          >
-            <div className="bg-accent text-accent-foreground px-4 py-1.5 font-bold">
-              {element.data?.username ? `${element.data.username}:` : "Quote:"}
-            </div>
-            <div className="text-muted-foreground prose prose-sm dark:prose-invert max-w-none p-4 pt-2 break-words">
-              {element.content}
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
-
+function wasEdited(createdAt: string, updatedAt: string): boolean {
+  const created = new Date(createdAt).getTime();
+  const updated = new Date(updatedAt).getTime();
   return (
-    <div className="min-w-0 space-y-4">{elements.map(renderElement)}</div>
+    Number.isFinite(created) &&
+    Number.isFinite(updated) &&
+    updated - created > 1500
   );
 }
 
-// Componente para User Info Sidebar (Desktop)
+function formatEditedAt(updatedAt: string): string {
+  return new Date(updatedAt).toLocaleString("pt-BR");
+}
+
 function UserSidebar({ post }: { post: Post }) {
   return (
     <div className="border-border bg-muted w-48 shrink-0 border-r p-4">
@@ -155,7 +58,6 @@ function UserSidebar({ post }: { post: Post }) {
   );
 }
 
-// Componente para Header Mobile
 function MobilePostHeader({ post }: { post: Post }) {
   return (
     <div className="border-border bg-muted border-b p-4">
@@ -190,18 +92,22 @@ function MobilePostHeader({ post }: { post: Post }) {
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <span className="text-muted-foreground text-sm">{post.timestamp}</span>
-        <Badge variant="outline" className="text-muted-foreground">
-          Mensagem
-        </Badge>
       </div>
     </div>
   );
 }
 
-// Componente para ações do post
-function PostActions({ onReply }: { onReply: () => void }) {
+function PostActions({
+  onReply,
+  canEdit,
+  onEdit,
+}: {
+  onReply: () => void;
+  canEdit: boolean;
+  onEdit: () => void;
+}) {
   return (
-    <div className="flex items-center justify-end gap-2">
+    <div className="flex flex-wrap items-center justify-end gap-2">
       <Button
         variant="ghost"
         size="sm"
@@ -210,6 +116,18 @@ function PostActions({ onReply }: { onReply: () => void }) {
         <ThumbsUp />
         Curtir
       </Button>
+      {canEdit && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:text-foreground"
+          onClick={onEdit}
+        >
+          <Pencil />
+          Editar
+        </Button>
+      )}
       <Button
         variant="ghost"
         size="sm"
@@ -223,36 +141,161 @@ function PostActions({ onReply }: { onReply: () => void }) {
   );
 }
 
+function EditedLabel({
+  createdAt,
+  updatedAt,
+}: {
+  createdAt: string;
+  updatedAt: string;
+}) {
+  if (!wasEdited(createdAt, updatedAt)) return null;
+  return (
+    <p className="text-muted-foreground mt-3 text-xs italic">
+      Editado em {formatEditedAt(updatedAt)}
+    </p>
+  );
+}
+
 export function PostCard({
   post,
   onReply,
+  canEdit,
+  threadSlug,
 }: {
   post: Post;
   onReply: (user: string, content: string) => void;
+  canEdit: boolean;
+  threadSlug: string;
 }) {
+  const [content, setContent] = useState(post.content);
+  const [updatedAt, setUpdatedAt] = useState(post.updatedAt);
+  const [draft, setDraft] = useState(post.content);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function startEditing() {
+    setDraft(content);
+    setError(null);
+    setEditing(true);
+  }
+
+  function cancelEditing() {
+    setDraft(content);
+    setError(null);
+    setEditing(false);
+  }
+
+  async function saveEdit() {
+    if (!draft.trim()) return;
+    setSaving(true);
+    setError(null);
+
+    const isOriginal = post.id.startsWith("thread-");
+    const url = isOriginal
+      ? `/api/threads/${threadSlug}`
+      : `/api/posts/${post.id}`;
+    const body = isOriginal
+      ? { description: draft.trim() }
+      : { content: draft.trim() };
+
+    try {
+      const res = await fetch(url, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        setError(data?.error || "Não foi possível salvar a edição");
+        return;
+      }
+
+      const data = (await res.json()) as { updatedAt?: string };
+      setContent(draft.trim());
+      setUpdatedAt(data.updatedAt ?? new Date().toISOString());
+      setEditing(false);
+    } catch {
+      setError("Não foi possível salvar a edição");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const body = editing ? (
+    <div className="space-y-3">
+      <BBCodeEditor
+        id={`edit-post-${post.id}`}
+        value={draft}
+        onChange={setDraft}
+        disabled={saving}
+        minHeightClass="min-h-[160px]"
+      />
+      {error && <p className="text-destructive text-sm">{error}</p>}
+      <div className="flex justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={cancelEditing}
+          disabled={saving}
+        >
+          Cancelar
+        </Button>
+        <Button
+          type="button"
+          onClick={saveEdit}
+          disabled={saving || !draft.trim()}
+          aria-busy={saving}
+        >
+          {saving ? <Loader2 className="animate-spin" /> : <Pencil />}
+          {saving ? "Salvando..." : "Salvar"}
+        </Button>
+      </div>
+    </div>
+  ) : (
+    <>
+      <BBCodeContent content={content} />
+      <EditedLabel createdAt={post.createdAt} updatedAt={updatedAt} />
+    </>
+  );
+
   return (
     <Card className="border-border overflow-hidden border bg-card">
-      {/* MOBILE */}
       <div className="block md:hidden">
         <MobilePostHeader post={post} />
-        <div className="p-4">
-          <BBCodeContent content={post.content} />
-        </div>
-        <div className="px-4 pb-4">
-          <PostActions onReply={() => onReply(post.author, post.content)} />
-        </div>
+        <div className="p-4">{body}</div>
+        {!editing && (
+          <div className="border-border border-t px-4 py-3">
+            <PostActions
+              canEdit={canEdit}
+              onEdit={startEditing}
+              onReply={() => onReply(post.author, content)}
+            />
+          </div>
+        )}
       </div>
 
-      {/* DESKTOP */}
       <div className="hidden md:flex">
         <UserSidebar post={post} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <div className="p-4">
-            <BBCodeContent content={post.content} />
+          <div className="border-border border-b px-4 py-2">
+            <span className="text-muted-foreground text-sm">
+              {post.timestamp}
+            </span>
           </div>
-          <div className="bg-muted mt-auto px-4 py-3">
-            <PostActions onReply={() => onReply(post.author, post.content)} />
-          </div>
+          <div className="flex-1 p-4">{body}</div>
+          {!editing && (
+            <div className="border-border mt-auto border-t px-4 py-3">
+              <PostActions
+                canEdit={canEdit}
+                onEdit={startEditing}
+                onReply={() => onReply(post.author, content)}
+              />
+            </div>
+          )}
         </div>
       </div>
     </Card>

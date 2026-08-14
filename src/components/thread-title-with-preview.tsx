@@ -8,12 +8,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { stripBBCode } from "@/utils/bbcode-parser";
 
 const PREVIEW_MAX_LENGTH = 180;
-
-function stripBBCode(text: string): string {
-  return text.replace(/\[\/?[^\]]*\]/g, "").replace(/\s+/g, " ").trim();
-}
 
 export function ThreadTitleWithPreview({
   title,

@@ -28,6 +28,7 @@ export interface ThreadBySlug {
   userName: string | null;
   userAvatar: string | null;
   createdAt: Date;
+  updatedAt: Date;
   forumSlug: string;
   forumTitle: string;
 }
@@ -46,5 +47,6 @@ export interface ThreadClientProps {
   forumTitle: string;
   userId: string;
   isAuthenticated: boolean;
+  currentUserRole?: string;
   thread: ThreadHeaderInfo;
 }

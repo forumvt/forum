@@ -1,3 +1,4 @@
+import { canEditPost } from "@/lib/permissions";
 import * as threadRepo from "@/repositories/thread.repository";
 import type { FilterType } from "@/types/filters";
 import type { ThreadBySlug, ThreadListItem } from "@/types/thread";
@@ -29,7 +30,7 @@ export interface ListThreadsResult {
 }
 
 export async function listThreads(
-  params: ListThreadsParams
+  params: ListThreadsParams,
 ): Promise<ListThreadsResult> {
   const { forumId, filter, page, per, sessionUserId } = params;
   const { threads, totalCount } = await threadRepo.findManyPaginated({
@@ -44,11 +45,15 @@ export async function listThreads(
   return { threads, totalCount, totalPages, currentPage };
 }
 
-export async function getThreadBySlug(slug: string): Promise<ThreadBySlug | null> {
+export async function getThreadBySlug(
+  slug: string,
+): Promise<ThreadBySlug | null> {
   return threadRepo.findBySlug(slug);
 }
 
-export async function getThreadForApi(slug: string): Promise<ThreadBySlug | null> {
+export async function getThreadForApi(
+  slug: string,
+): Promise<ThreadBySlug | null> {
   return threadRepo.findBySlug(slug);
 }
 
@@ -70,11 +75,30 @@ export async function createThread(data: {
 
 export async function markThreadAsRead(
   threadId: string,
-  userId: string
+  userId: string,
 ): Promise<void> {
   return threadRepo.markThreadAsRead(threadId, userId);
 }
 
 export async function incrementThreadViews(threadId: string): Promise<void> {
   return threadRepo.incrementViews(threadId);
+}
+
+export type UpdateOriginalPostResult =
+  | { ok: true; updatedAt: Date }
+  | { ok: false; error: "not_found" | "forbidden" };
+
+export async function updateOriginalPost(
+  slug: string,
+  description: string,
+  actor: { id: string; role?: string },
+): Promise<UpdateOriginalPostResult> {
+  const thread = await threadRepo.findBySlug(slug);
+  if (!thread) return { ok: false, error: "not_found" };
+  if (!canEditPost(actor.id, actor.role, thread.userId)) {
+    return { ok: false, error: "forbidden" };
+  }
+  const updated = await threadRepo.updateDescription(slug, description);
+  if (!updated) return { ok: false, error: "not_found" };
+  return { ok: true, updatedAt: updated.updatedAt };
 }

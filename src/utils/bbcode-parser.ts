@@ -1,163 +1,487 @@
-type BBCodeElement =
+export type BBCodeNode =
   | { type: "text"; content: string }
-  | { type: "image"; content: string; data: { url: string } }
-  | { type: "youtube"; content: string; data: { id: string } }
-  | { type: "twitter"; content: string; data: { id: string; url: string } }
-  | { type: "quote"; content: string; data: { username?: string } }
+  | { type: "bold"; children: BBCodeNode[] }
+  | { type: "italic"; children: BBCodeNode[] }
+  | { type: "underline"; children: BBCodeNode[] }
+  | { type: "strike"; children: BBCodeNode[] }
+  | { type: "url"; href: string | null; children: BBCodeNode[] }
+  | { type: "color"; color: string | null; children: BBCodeNode[] }
+  | { type: "size"; size: number | null; children: BBCodeNode[] }
+  | { type: "code"; content: string }
+  | { type: "list"; ordered: boolean; items: BBCodeNode[][] }
+  | { type: "spoiler"; children: BBCodeNode[] }
+  | { type: "center"; children: BBCodeNode[] }
+  | { type: "quote"; username?: string; children: BBCodeNode[] }
+  | { type: "image"; url: string }
+  | { type: "youtube"; id: string }
+  | { type: "twitter"; id: string; url: string };
 
-export function parseBBCode(content: string): BBCodeElement[] {
-  const elements: BBCodeElement[] = []
+const NAMED_COLORS = new Set([
+  "black",
+  "white",
+  "red",
+  "green",
+  "blue",
+  "yellow",
+  "orange",
+  "purple",
+  "pink",
+  "gray",
+  "grey",
+  "brown",
+  "navy",
+  "teal",
+  "cyan",
+  "magenta",
+  "lime",
+  "maroon",
+  "olive",
+  "silver",
+  "aqua",
+  "fuchsia",
+  "gold",
+  "indigo",
+  "violet",
+  "coral",
+  "tomato",
+  "crimson",
+  "darkred",
+  "darkblue",
+  "darkgreen",
+]);
 
-  // Regex patterns for BBCode tags
-  const patterns = [
-    { type: "youtube", regex: /\[youtube\](.*?)\[\/youtube\]/g },
-    { type: "twitter", regex: /\[twitter\](.*?)\[\/twitter\]/g },
-    { type: "image", regex: /\[img\](.*?)\[\/img\]/g },
-    { type: "quote", regex: /\[quote(?:=(.*?))?\]([\s\S]*?)\[\/quote\]/g },
-  ]
+const CONTAINER_TAGS = new Set([
+  "b",
+  "i",
+  "u",
+  "s",
+  "url",
+  "color",
+  "size",
+  "spoiler",
+  "center",
+  "quote",
+  "list",
+]);
 
-  let lastIndex = 0
-  const matches: Array<{ type: string; match: RegExpExecArray; index: number }> = []
+const RAW_TAGS = new Set(["code", "img", "youtube", "twitter"]);
 
-  // Find all matches
-  patterns.forEach((pattern) => {
-    let match
-    const regex = new RegExp(pattern.regex.source, "g")
-    while ((match = regex.exec(content)) !== null) {
-      matches.push({
-        type: pattern.type,
-        match,
-        index: match.index,
-      })
+interface MatchedTag {
+  close: boolean;
+  name: string;
+  attr?: string;
+  length: number;
+}
+
+export function parseBBCode(content: string): BBCodeNode[] {
+  if (!content) return [];
+  const { nodes } = parseUntil(content, 0, null, new Set());
+  return nodes;
+}
+
+export function stripBBCode(text: string): string {
+  return text
+    .replace(/\[\/?[^\]]*\]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function isBlockNode(node: BBCodeNode): boolean {
+  return (
+    node.type === "quote" ||
+    node.type === "list" ||
+    node.type === "image" ||
+    node.type === "youtube" ||
+    node.type === "twitter" ||
+    node.type === "code" ||
+    node.type === "center" ||
+    node.type === "spoiler"
+  );
+}
+
+export function sanitizeUrl(url: string): string | null {
+  const trimmed = url.trim();
+  if (!trimmed || /\s/.test(trimmed)) return null;
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return null;
     }
-  })
+    return trimmed;
+  } catch {
+    return null;
+  }
+}
 
-  // Sort matches by position
-  matches.sort((a, b) => a.index - b.index)
+export function sanitizeColor(value: string): string | null {
+  const trimmed = value.trim();
+  if (NAMED_COLORS.has(trimmed.toLowerCase())) {
+    return trimmed.toLowerCase();
+  }
+  if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(trimmed)) {
+    return trimmed;
+  }
+  return null;
+}
 
-  // Process content
-  matches.forEach(({ type, match }) => {
-    // Add text before this match
-    if (match.index > lastIndex) {
-      const textContent = content.slice(lastIndex, match.index).trim()
-      if (textContent) {
-        elements.push({
-          type: "text",
-          content: textContent,
-        })
-      }
-    }
+export function sanitizeSize(value: string): number | null {
+  const n = Number.parseInt(value.trim(), 10);
+  if (Number.isNaN(n)) return null;
+  return Math.min(28, Math.max(10, n));
+}
 
-    // Add the matched element
-    const matchedContent = match[1]
+function matchTag(input: string, pos: number): MatchedTag | null {
+  if (input[pos] !== "[") return null;
+  const end = input.indexOf("]", pos);
+  if (end === -1) return null;
 
-    if (type === "youtube") {
-      // Extract YouTube ID from URL or direct ID
-      const youtubeId = extractYouTubeId(matchedContent)
-      if (youtubeId) {
-        elements.push({
-          type: "youtube",
-          content: matchedContent,
-          data: { id: youtubeId },
-        })
-      }
-    } else if (type === "twitter") {
-      // Extract tweet ID from URL or direct ID
-      const tweetId = extractTwitterId(matchedContent)
-      if (tweetId) {
-        elements.push({
-          type: "twitter",
-          content: matchedContent,
-          data: { id: tweetId, url: matchedContent },
-        })
-      }
-    } else if (type === "image") {
-      elements.push({
-        type: "image",
-        content: matchedContent,
-        data: { url: matchedContent },
-      })
-    } else if (type === "quote") {
-      // match[1] depends on how the regex groups capture. 
-      // regex: /\[quote(?:=(.*?))?\](.*?)\[\/quote\]/g
-      // match[0] is full string
-      // match[1] is username (group 1)
-      // match[2] is content (group 2)
+  const inner = input.slice(pos + 1, end);
+  if (!inner) return null;
 
-      // However, the current generic loop structure uses `match[1]` as "matchedContent" 
-      // which might be simplistic for multi-group regex.
-      // Let's look at the generic loop: `const matchedContent = match[1]`
-      // For our quote regex: `[quote=User]Text[/quote]` -> match[1]="User", match[2]="Text"
-      // For `[quote]Text[/quote]` -> match[1]=undefined, match[2]="Text"
-
-      // We need to adjust how we handle this because the generic loop assumes match[1] is the content.
-      // But for consistency with existing code's structure, we might need a small separate fix or just handle it here if we can access `match` object.
-      // The loop gives us `match` (RegExpExecArray).
-
-      const username = match[1]
-      const quoteContent = match[2]
-
-      // If it was a simple quote without username, match[1] would be the content in the generic logic 
-      // IF the regex was `\[quote\](.*?)\[\/quote\]`.
-      // But we have `\[quote(?:=(.*?))?\](.*?)\[\/quote\]`.
-
-      elements.push({
-        type: "quote",
-        content: quoteContent || "",
-        data: { username: username || undefined },
-      })
-    }
-
-    lastIndex = match.index + match[0].length
-  })
-
-  // Add remaining text
-  if (lastIndex < content.length) {
-    const textContent = content.slice(lastIndex).trim()
-    if (textContent) {
-      elements.push({
-        type: "text",
-        content: textContent,
-      })
-    }
+  const close = inner.startsWith("/");
+  const body = close ? inner.slice(1) : inner;
+  if (body === "*") {
+    return { close, name: "*", length: end - pos + 1 };
   }
 
-  // If no BBCode found, treat as plain text
-  if (elements.length === 0 && content.trim()) {
-    elements.push({
-      type: "text",
-      content: content.trim(),
-    })
+  const eq = body.indexOf("=");
+  const name = (eq === -1 ? body : body.slice(0, eq)).trim().toLowerCase();
+  if (!/^[a-z]+$/.test(name)) return null;
+  const attr = eq === -1 ? undefined : body.slice(eq + 1);
+
+  return { close, name, attr, length: end - pos + 1 };
+}
+
+function findRawClose(
+  input: string,
+  start: number,
+  tagName: string,
+): { contentEnd: number; after: number } {
+  const lower = input.slice(start).toLowerCase();
+  const needle = `[/${tagName}]`;
+  const idx = lower.indexOf(needle);
+  if (idx === -1) {
+    return { contentEnd: input.length, after: input.length };
+  }
+  return { contentEnd: start + idx, after: start + idx + needle.length };
+}
+
+function parseUntil(
+  input: string,
+  start: number,
+  stopTag: string | null,
+  ancestors: Set<string>,
+): { nodes: BBCodeNode[]; pos: number } {
+  const nodes: BBCodeNode[] = [];
+  let pos = start;
+  let textStart = start;
+
+  const flushText = (end: number) => {
+    if (end > textStart) {
+      nodes.push({ type: "text", content: input.slice(textStart, end) });
+    }
+  };
+
+  while (pos < input.length) {
+    if (input[pos] !== "[") {
+      pos += 1;
+      continue;
+    }
+
+    const tag = matchTag(input, pos);
+    if (!tag) {
+      pos += 1;
+      continue;
+    }
+
+    if (tag.close) {
+      if (stopTag && tag.name === stopTag) {
+        flushText(pos);
+        return { nodes, pos: pos + tag.length };
+      }
+      if (ancestors.has(tag.name)) {
+        flushText(pos);
+        return { nodes, pos };
+      }
+      pos += tag.length;
+      continue;
+    }
+
+    if (tag.name === "*" && stopTag === "*") {
+      flushText(pos);
+      return { nodes, pos };
+    }
+
+    const isKnown = CONTAINER_TAGS.has(tag.name) || RAW_TAGS.has(tag.name);
+    if (!isKnown) {
+      pos += tag.length;
+      continue;
+    }
+
+    flushText(pos);
+    const parsed = parseOpenTag(input, pos, tag, ancestors);
+    nodes.push(parsed.node);
+    pos = parsed.pos;
+    textStart = pos;
   }
 
-  return elements
+  flushText(input.length);
+  return { nodes, pos: input.length };
+}
+
+function parseOpenTag(
+  input: string,
+  pos: number,
+  tag: MatchedTag,
+  ancestors: Set<string>,
+): { node: BBCodeNode; pos: number } {
+  const innerStart = pos + tag.length;
+  const nextAncestors = new Set(ancestors);
+  nextAncestors.add(tag.name);
+
+  switch (tag.name) {
+    case "b": {
+      const { nodes, pos: end } = parseUntil(
+        input,
+        innerStart,
+        "b",
+        nextAncestors,
+      );
+      return { node: { type: "bold", children: nodes }, pos: end };
+    }
+    case "i": {
+      const { nodes, pos: end } = parseUntil(
+        input,
+        innerStart,
+        "i",
+        nextAncestors,
+      );
+      return { node: { type: "italic", children: nodes }, pos: end };
+    }
+    case "u": {
+      const { nodes, pos: end } = parseUntil(
+        input,
+        innerStart,
+        "u",
+        nextAncestors,
+      );
+      return { node: { type: "underline", children: nodes }, pos: end };
+    }
+    case "s": {
+      const { nodes, pos: end } = parseUntil(
+        input,
+        innerStart,
+        "s",
+        nextAncestors,
+      );
+      return { node: { type: "strike", children: nodes }, pos: end };
+    }
+    case "spoiler": {
+      const { nodes, pos: end } = parseUntil(
+        input,
+        innerStart,
+        "spoiler",
+        nextAncestors,
+      );
+      return { node: { type: "spoiler", children: nodes }, pos: end };
+    }
+    case "center": {
+      const { nodes, pos: end } = parseUntil(
+        input,
+        innerStart,
+        "center",
+        nextAncestors,
+      );
+      return { node: { type: "center", children: nodes }, pos: end };
+    }
+    case "quote": {
+      const { nodes, pos: end } = parseUntil(
+        input,
+        innerStart,
+        "quote",
+        nextAncestors,
+      );
+      const username = tag.attr?.trim() || undefined;
+      return { node: { type: "quote", username, children: nodes }, pos: end };
+    }
+    case "color": {
+      const { nodes, pos: end } = parseUntil(
+        input,
+        innerStart,
+        "color",
+        nextAncestors,
+      );
+      return {
+        node: {
+          type: "color",
+          color: tag.attr ? sanitizeColor(tag.attr) : null,
+          children: nodes,
+        },
+        pos: end,
+      };
+    }
+    case "size": {
+      const { nodes, pos: end } = parseUntil(
+        input,
+        innerStart,
+        "size",
+        nextAncestors,
+      );
+      return {
+        node: {
+          type: "size",
+          size: tag.attr ? sanitizeSize(tag.attr) : null,
+          children: nodes,
+        },
+        pos: end,
+      };
+    }
+    case "url": {
+      if (tag.attr !== undefined) {
+        const { nodes, pos: end } = parseUntil(
+          input,
+          innerStart,
+          "url",
+          nextAncestors,
+        );
+        return {
+          node: {
+            type: "url",
+            href: sanitizeUrl(tag.attr),
+            children: nodes,
+          },
+          pos: end,
+        };
+      }
+      const close = findRawClose(input, innerStart, "url");
+      const inner = input.slice(innerStart, close.contentEnd).trim();
+      return {
+        node: {
+          type: "url",
+          href: sanitizeUrl(inner),
+          children: [{ type: "text", content: inner }],
+        },
+        pos: close.after,
+      };
+    }
+    case "code": {
+      const close = findRawClose(input, innerStart, "code");
+      return {
+        node: {
+          type: "code",
+          content: input.slice(innerStart, close.contentEnd),
+        },
+        pos: close.after,
+      };
+    }
+    case "img": {
+      const close = findRawClose(input, innerStart, "img");
+      const url = input.slice(innerStart, close.contentEnd).trim();
+      const safe = sanitizeUrl(url);
+      if (!safe) {
+        return { node: { type: "text", content: url }, pos: close.after };
+      }
+      return { node: { type: "image", url: safe }, pos: close.after };
+    }
+    case "youtube": {
+      const close = findRawClose(input, innerStart, "youtube");
+      const inner = input.slice(innerStart, close.contentEnd).trim();
+      const id = extractYouTubeId(inner);
+      if (!id) {
+        return { node: { type: "text", content: inner }, pos: close.after };
+      }
+      return { node: { type: "youtube", id }, pos: close.after };
+    }
+    case "twitter": {
+      const close = findRawClose(input, innerStart, "twitter");
+      const inner = input.slice(innerStart, close.contentEnd).trim();
+      const id = extractTwitterId(inner);
+      if (!id) {
+        return { node: { type: "text", content: inner }, pos: close.after };
+      }
+      const url = inner.startsWith("http")
+        ? inner
+        : `https://twitter.com/i/status/${id}`;
+      return { node: { type: "twitter", id, url }, pos: close.after };
+    }
+    case "list": {
+      return parseList(input, innerStart, tag.attr, nextAncestors);
+    }
+    default:
+      return {
+        node: { type: "text", content: input.slice(pos, innerStart) },
+        pos: innerStart,
+      };
+  }
+}
+
+function parseList(
+  input: string,
+  innerStart: number,
+  attr: string | undefined,
+  ancestors: Set<string>,
+): { node: BBCodeNode; pos: number } {
+  const ordered = Boolean(attr && attr.trim() !== "");
+  const items: BBCodeNode[][] = [];
+  let pos = innerStart;
+
+  while (pos < input.length) {
+    while (pos < input.length && /\s/.test(input[pos] ?? "")) {
+      pos += 1;
+    }
+
+    const tag = matchTag(input, pos);
+    if (tag?.close && tag.name === "list") {
+      return {
+        node: { type: "list", ordered, items },
+        pos: pos + tag.length,
+      };
+    }
+    if (tag?.close && ancestors.has(tag.name) && tag.name !== "list") {
+      return { node: { type: "list", ordered, items }, pos };
+    }
+    if (tag && !tag.close && tag.name === "*") {
+      pos += tag.length;
+      const { nodes, pos: itemEnd } = parseUntil(input, pos, "*", ancestors);
+      items.push(nodes);
+      pos = itemEnd;
+      continue;
+    }
+    if (!tag) {
+      pos += 1;
+      continue;
+    }
+    pos += tag.length;
+  }
+
+  return { node: { type: "list", ordered, items }, pos };
 }
 
 function extractYouTubeId(url: string): string | null {
   const patterns = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
-    /^([a-zA-Z0-9_-]{11})$/, // Direct ID
-  ]
+    /^([a-zA-Z0-9_-]{11})$/,
+  ];
 
   for (const pattern of patterns) {
-    const match = url.match(pattern)
-    if (match) return match[1]
+    const match = url.match(pattern);
+    if (match?.[1]) return match[1];
   }
 
-  return null
+  return null;
 }
 
 function extractTwitterId(url: string): string | null {
   const patterns = [
     /twitter\.com\/\w+\/status\/(\d+)/,
     /x\.com\/\w+\/status\/(\d+)/,
-    /^(\d+)$/, // Direct ID
-  ]
+    /^(\d+)$/,
+  ];
 
   for (const pattern of patterns) {
-    const match = url.match(pattern)
-    if (match) return match[1]
+    const match = url.match(pattern);
+    if (match?.[1]) return match[1];
   }
 
-  return null
+  return null;
 }

@@ -30,6 +30,7 @@ export async function findBySlug(slug: string): Promise<ThreadBySlug | null> {
       userName: userTable.name,
       userAvatar: userTable.image,
       createdAt: threadTable.createdAt,
+      updatedAt: threadTable.updatedAt,
       forumSlug: forumTable.slug,
       forumTitle: forumTable.title,
     })
@@ -51,14 +52,12 @@ export interface FindManyPaginatedOptions {
 }
 
 export async function findManyPaginated(
-  options: FindManyPaginatedOptions
+  options: FindManyPaginatedOptions,
 ): Promise<{ threads: ThreadListItem[]; totalCount: number }> {
   const { forumId, filter, sessionUserId, page, per } = options;
   const effectiveUserId = sessionUserId ?? NO_SESSION_USER_ID;
 
-  const forumWhere = forumId
-    ? eq(threadTable.forumId, forumId)
-    : undefined;
+  const forumWhere = forumId ? eq(threadTable.forumId, forumId) : undefined;
 
   let totalCount: number;
   if (filter === "unanswered") {
@@ -67,8 +66,13 @@ export async function findManyPaginated(
       .from(threadTable)
       .leftJoin(postTable, eq(postTable.threadId, threadTable.id));
     const rows = forumWhere
-      ? await baseUnanswered.where(forumWhere).groupBy(threadTable.id).having(sql`COUNT(${postTable.id}) = 0`)
-      : await baseUnanswered.groupBy(threadTable.id).having(sql`COUNT(${postTable.id}) = 0`);
+      ? await baseUnanswered
+          .where(forumWhere)
+          .groupBy(threadTable.id)
+          .having(sql`COUNT(${postTable.id}) = 0`)
+      : await baseUnanswered
+          .groupBy(threadTable.id)
+          .having(sql`COUNT(${postTable.id}) = 0`);
     totalCount = rows.length;
   } else if (filter === "answered-by-me" && sessionUserId) {
     const answeredWhere = forumWhere
@@ -97,7 +101,9 @@ export async function findManyPaginated(
           .select({ totalCount: sql<number>`count(*)::int` })
           .from(threadTable)
           .where(forumWhere)
-      : await db.select({ totalCount: sql<number>`count(*)::int` }).from(threadTable);
+      : await db
+          .select({ totalCount: sql<number>`count(*)::int` })
+          .from(threadTable);
     totalCount = r?.totalCount ?? 0;
   }
 
@@ -127,7 +133,7 @@ export async function findManyPaginated(
         ? forumWhere
           ? and(forumWhere, isNotNull(threadReadTable.lastReadAt))
           : isNotNull(threadReadTable.lastReadAt)
-        : forumWhere ?? undefined;
+        : (forumWhere ?? undefined);
 
   const baseQuery = db
     .select({
@@ -157,8 +163,8 @@ export async function findManyPaginated(
       threadReadTable,
       and(
         eq(threadReadTable.threadId, threadTable.id),
-        eq(threadReadTable.userId, effectiveUserId)
-      )
+        eq(threadReadTable.userId, effectiveUserId),
+      ),
     );
 
   const withWhere = filterWhere ? baseQuery.where(filterWhere) : baseQuery;
@@ -173,7 +179,7 @@ export async function findManyPaginated(
     userTable.name,
     userTable.image,
     lastPostUser.name,
-    lastPostUser.image
+    lastPostUser.image,
   );
   const withHaving =
     filter === "unanswered"
@@ -188,15 +194,13 @@ export async function findManyPaginated(
   return { threads: threads as ThreadListItem[], totalCount };
 }
 
-export async function create(
-  data: {
-    title: string;
-    slug: string;
-    description: string;
-    forumId: string;
-    userId: string;
-  }
-): Promise<{ id: string }> {
+export async function create(data: {
+  title: string;
+  slug: string;
+  description: string;
+  forumId: string;
+  userId: string;
+}): Promise<{ id: string }> {
   const [row] = await db
     .insert(threadTable)
     .values({
@@ -214,7 +218,7 @@ export async function create(
 export async function updateLastPost(
   dbOrTx: Db,
   threadId: string,
-  userId: string
+  userId: string,
 ): Promise<void> {
   await dbOrTx
     .update(threadTable)
@@ -232,9 +236,24 @@ export async function incrementViews(threadId: string): Promise<void> {
     .where(eq(threadTable.id, threadId));
 }
 
+export async function updateDescription(
+  slug: string,
+  description: string,
+): Promise<{ updatedAt: Date } | null> {
+  const [row] = await db
+    .update(threadTable)
+    .set({
+      description,
+      updatedAt: new Date(),
+    })
+    .where(eq(threadTable.slug, slug))
+    .returning({ updatedAt: threadTable.updatedAt });
+  return row ?? null;
+}
+
 export async function markThreadAsRead(
   threadId: string,
-  userId: string
+  userId: string,
 ): Promise<void> {
   await db
     .insert(threadReadTable)

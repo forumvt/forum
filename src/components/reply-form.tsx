@@ -1,17 +1,16 @@
 "use client";
 
-import { HelpCircle, Loader2, MessageSquare, Send } from "lucide-react";
+import { Loader2, MessageSquare, Send } from "lucide-react";
 import type React from "react";
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 
+import { BBCodeEditor } from "@/components/bbcode-editor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 
 import { LoginDialog } from "./login-dialog";
 import { RegisterDialog } from "./register-dialog";
-import { Collapsible, CollapsibleContent } from "./ui/collapsible";
 
 export interface ReplyFormHandle {
   replyTo: (username: string, content: string) => void;
@@ -27,96 +26,24 @@ interface ReplyFormProps {
 export const ReplyForm = forwardRef<ReplyFormHandle, ReplyFormProps>(
   ({ threadId, userId, isAuthenticated, forum }, ref) => {
     const [content, setContent] = useState("");
-    const [images, setImages] = useState<Array<{ url: string; alt?: string }>>(
-      [],
-    );
-    const [videos, setVideos] = useState<
-      Array<{ id: string; title?: string; platform: "youtube" }>
-    >([]);
-    const [embeds, setEmbeds] = useState<
-      Array<{ id: string; url: string; platform: "twitter" }>
-    >([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [showHelp, setShowHelp] = useState(false);
-
-    const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
+    const editorWrapRef = useRef<HTMLDivElement | null>(null);
 
     useImperativeHandle(ref, () => ({
       replyTo(username: string, postContent: string) {
-        const quoted =
-          `[quote=${username}]${postContent}[/quote]\n\n`;
+        const quoted = `[quote=${username}]${postContent}[/quote]\n\n`;
         setContent(quoted);
 
         setTimeout(() => {
-          textAreaRef.current?.scrollIntoView({
+          editorWrapRef.current?.scrollIntoView({
             behavior: "smooth",
             block: "center",
           });
-          textAreaRef.current?.focus();
+          editorWrapRef.current?.querySelector("textarea")?.focus();
         }, 50);
       },
     }));
 
-    const [newImageUrl, setNewImageUrl] = useState("");
-    const [newImageAlt, setNewImageAlt] = useState("");
-    const [newVideoUrl, setNewVideoUrl] = useState("");
-    const [newEmbedUrl, setNewEmbedUrl] = useState("");
-
-    const extractYoutubeId = (url: string): string | null => {
-      const regex =
-        /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/;
-      const match = url.match(regex);
-      return match ? match[1] : null;
-    };
-
-    const extractTweetId = (url: string): string | null => {
-      const regex =
-        /twitter\.com\/\w+\/status\/(\d+)|x\.com\/\w+\/status\/(\d+)/;
-      const match = url.match(regex);
-      return match ? match[1] || match[2] : null;
-    };
-
-    const addImage = () => {
-      if (newImageUrl.trim()) {
-        setImages([
-          ...images,
-          { url: newImageUrl.trim(), alt: newImageAlt.trim() || undefined },
-        ]);
-        setNewImageUrl("");
-        setNewImageAlt("");
-      }
-    };
-
-    const addVideo = () => {
-      const videoId = extractYoutubeId(newVideoUrl);
-      if (videoId) {
-        setVideos([...videos, { id: videoId, platform: "youtube" }]);
-        setNewVideoUrl("");
-      }
-    };
-
-    const addEmbed = () => {
-      const tweetId = extractTweetId(newEmbedUrl);
-      if (tweetId) {
-        setEmbeds([
-          ...embeds,
-          { id: tweetId, url: newEmbedUrl.trim(), platform: "twitter" },
-        ]);
-        setNewEmbedUrl("");
-      }
-    };
-
-    const removeImage = (index: number) => {
-      setImages(images.filter((_, i) => i !== index));
-    };
-
-    const removeVideo = (index: number) => {
-      setVideos(videos.filter((_, i) => i !== index));
-    };
-
-    const removeEmbed = (index: number) => {
-      setEmbeds(embeds.filter((_, i) => i !== index));
-    };
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!content.trim()) return;
@@ -136,13 +63,12 @@ export const ReplyForm = forwardRef<ReplyFormHandle, ReplyFormProps>(
 
         if (res.ok) {
           setContent("");
-          // Refresh the page to show the new post
           window.location.reload();
         } else {
           const data = await res.json();
           alert("Error: " + (data.error || "Failed to create post"));
         }
-      } catch (error) {
+      } catch {
         alert("Error: Failed to create post");
       } finally {
         setIsSubmitting(false);
@@ -169,36 +95,7 @@ export const ReplyForm = forwardRef<ReplyFormHandle, ReplyFormProps>(
         </Card>
       );
     }
-    const hasContent =
-      content.trim() ||
-      images.length > 0 ||
-      videos.length > 0 ||
-      embeds.length > 0;
-    const insertBBCode = (tag: string, placeholder = "") => {
-      const textarea = document.getElementById(
-        "post-content",
-      ) as HTMLTextAreaElement;
-      if (!textarea) return;
 
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const selectedText = content.substring(start, end);
-      const replacement = selectedText || placeholder;
-
-      const newContent =
-        content.substring(0, start) +
-        `[${tag}]${replacement}[/${tag}]` +
-        content.substring(end);
-
-      setContent(newContent);
-
-      // Reposicionar cursor
-      setTimeout(() => {
-        const newPosition = start + tag.length + 2 + replacement.length;
-        textarea.focus();
-        textarea.setSelectionRange(newPosition, newPosition);
-      }, 0);
-    };
     return (
       <Card className="border-border bg-card w-full border">
         <CardHeader className="pb-4">
@@ -210,97 +107,23 @@ export const ReplyForm = forwardRef<ReplyFormHandle, ReplyFormProps>(
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <Label htmlFor="post-content">Conteúdo</Label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowHelp(!showHelp)}
-                aria-expanded={showHelp}
-                className="text-muted-foreground hover:text-foreground text-xs"
-              >
-                <HelpCircle />
-                BBCode
-              </Button>
+            <Label htmlFor="post-content" className="mb-2">
+              Conteúdo
+            </Label>
+            <div ref={editorWrapRef}>
+              <BBCodeEditor
+                id="post-content"
+                value={content}
+                onChange={setContent}
+                disabled={isSubmitting}
+                placeholder="Escreva sua resposta aqui... Use BBCode para formatar o texto, imagens, vídeos e citações."
+              />
             </div>
-
-            <Collapsible open={showHelp} onOpenChange={setShowHelp}>
-              <CollapsibleContent className="mb-3">
-                <div className="bg-muted space-y-2 rounded-md p-3 text-sm">
-                  <p className="font-medium">
-                    Use BBCode para adicionar mídia:
-                  </p>
-                  <div className="grid grid-cols-1 gap-2 text-xs md:grid-cols-2">
-                    <div>
-                      <code className="bg-background rounded px-1">
-                        [img]URL_DA_IMAGEM[/img]
-                      </code>
-                      <p className="text-muted-foreground">Para imagens</p>
-                    </div>
-                    <div>
-                      <code className="bg-background rounded px-1">
-                        [youtube]ID_OU_URL[/youtube]
-                      </code>
-                      <p className="text-muted-foreground">
-                        Para vídeos do YouTube
-                      </p>
-                    </div>
-                    <div>
-                      <code className="bg-background rounded px-1">
-                        [twitter]ID_OU_URL[/twitter]
-                      </code>
-                      <p className="text-muted-foreground">Para tweets</p>
-                    </div>
-                  </div>
-                  <p className="text-muted-foreground text-xs">
-                    Exemplo: Texto normal
-                    [img]https://exemplo.com/foto.jpg[/img] mais texto
-                    [youtube]dQw4w9WgXcQ[/youtube]
-                  </p>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            <Textarea
-              ref={textAreaRef}
-              id="post-content"
-              placeholder="Escreva sua resposta aqui... Use [img]URL[/img] para imagens, [youtube]ID[/youtube] para vídeos do YouTube, [twitter]URL[/twitter] para tweets"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="border-input min-h-[150px] resize-none font-mono text-sm focus:border-ring"
-            />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => insertBBCode("img", "URL_DA_IMAGEM")}
-              className="text-xs"
-            >
-              🖼️ + Imagem
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => insertBBCode("youtube", "ID_OU_URL_YOUTUBE")}
-              className="text-xs"
-            >
-              📺 + Vídeo
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => insertBBCode("twitter", "URL_DO_TWEET")}
-              className="text-xs"
-            >
-              🐦 + Tweet
-            </Button>
           </div>
           <div className="flex justify-end">
             <Button
               onClick={handleSubmit}
-              disabled={!hasContent || isSubmitting}
+              disabled={!content.trim() || isSubmitting}
               aria-busy={isSubmitting}
               className="w-full sm:w-auto"
             >

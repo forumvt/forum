@@ -7,10 +7,10 @@ import type React from "react";
 import { Suspense } from "react";
 import { useEffect, useState } from "react";
 
+import { BBCodeEditor } from "@/components/bbcode-editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { authClient } from "@/lib/auth-client";
 import type { Forum } from "@/types/forum";
 
@@ -104,13 +104,12 @@ const PostThreadContent = () => {
 
             <div className="space-y-2">
               <Label htmlFor="message">Mensagem</Label>
-              <Textarea
+              <BBCodeEditor
                 id="message"
-                placeholder="Escreva sua mensagem..."
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                required
-                className="border-border min-h-[220px] resize-y"
+                onChange={setMessage}
+                placeholder="Escreva sua mensagem..."
+                minHeightClass="min-h-[220px]"
               />
             </div>
 
@@ -122,6 +121,7 @@ const PostThreadContent = () => {
               </Button>
               <Button
                 type="submit"
+                disabled={!title.trim() || !message.trim()}
                 className="bg-foreground text-background hover:bg-foreground/90"
               >
                 Criar tópico

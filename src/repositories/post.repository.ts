@@ -7,7 +7,7 @@ type Db = typeof db;
 
 export async function create(
   db: Db,
-  data: { threadId: string; userId: string; content: string }
+  data: { threadId: string; userId: string; content: string },
 ): Promise<{ id: string }> {
   const [row] = await db
     .insert(postTable)
@@ -25,12 +25,13 @@ export async function findByThreadIdPaginated(
   db: Db,
   threadId: string,
   page: number,
-  per: number
+  per: number,
 ): Promise<{
   posts: Array<{
     id: string;
     content: string;
     createdAt: Date;
+    updatedAt: Date;
     userName: string | null;
     userAvatar: string | null;
     userId: string;
@@ -48,6 +49,7 @@ export async function findByThreadIdPaginated(
       id: postTable.id,
       content: postTable.content,
       createdAt: postTable.createdAt,
+      updatedAt: postTable.updatedAt,
       userName: userTable.name,
       userAvatar: userTable.image,
       userId: postTable.userId,
@@ -60,4 +62,33 @@ export async function findByThreadIdPaginated(
     .offset((page - 1) * per);
 
   return { posts, totalCount };
+}
+
+export async function findById(
+  id: string,
+): Promise<{ id: string; userId: string } | null> {
+  const [row] = await db
+    .select({
+      id: postTable.id,
+      userId: postTable.userId,
+    })
+    .from(postTable)
+    .where(eq(postTable.id, id))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function updateContent(
+  id: string,
+  content: string,
+): Promise<{ updatedAt: Date } | null> {
+  const [row] = await db
+    .update(postTable)
+    .set({
+      content,
+      updatedAt: new Date(),
+    })
+    .where(eq(postTable.id, id))
+    .returning({ updatedAt: postTable.updatedAt });
+  return row ?? null;
 }

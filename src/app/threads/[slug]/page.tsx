@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { PostsPagination } from "@/components/posts-pagination";
 import { ThreadClient } from "@/components/thread-client-props";
 import { auth } from "@/lib/auth";
+import { resolveActor } from "@/lib/session-actor";
 import * as postService from "@/services/post.service";
 import * as threadService from "@/services/thread.service";
 import type { Post } from "@/types/post";
@@ -38,13 +39,13 @@ export default async function ThreadPage({
     page?: string;
     per?: string;
   };
-  const page = Math.max(
-    1,
-    parseInt(search?.page ?? "1", 10) || 1
-  );
+  const page = Math.max(1, parseInt(search?.page ?? "1", 10) || 1);
   const per = Math.min(
     100,
-    Math.max(1, parseInt(search?.per ?? String(DEFAULT_PER), 10) || DEFAULT_PER)
+    Math.max(
+      1,
+      parseInt(search?.per ?? String(DEFAULT_PER), 10) || DEFAULT_PER,
+    ),
   );
 
   const postsResult = await postService.getPostsByThreadId({
@@ -53,12 +54,9 @@ export default async function ThreadPage({
     per,
   });
 
-  const {
-    posts: dbPosts,
-    totalCount,
-    totalPages,
-    currentPage,
-  } = postsResult;
+  const { posts: dbPosts, totalCount, totalPages, currentPage } = postsResult;
+
+  const actor = session?.user ? await resolveActor(session.user) : null;
 
   const initialPost: Post = {
     id: `thread-${thread.id}`,
@@ -72,6 +70,9 @@ export default async function ThreadPage({
     isOriginalPoster: true,
     userAvatar: thread.userAvatar,
     signature: "",
+    userId: thread.userId,
+    createdAt: thread.createdAt.toISOString(),
+    updatedAt: thread.updatedAt.toISOString(),
   };
 
   const displayPosts: Post[] = [
@@ -88,6 +89,9 @@ export default async function ThreadPage({
       isOriginalPoster: post.userId === thread.userId,
       userAvatar: post.userAvatar,
       signature: undefined,
+      userId: post.userId,
+      createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString(),
     })),
   ];
 
@@ -99,8 +103,9 @@ export default async function ThreadPage({
         threadSlug={slug}
         forumSlug={thread.forumSlug ?? slug}
         forumTitle={thread.forumTitle ?? "Fórum"}
-        userId={session?.user?.id || ""}
+        userId={actor?.id || ""}
         isAuthenticated={!!session?.user}
+        currentUserRole={actor?.role}
         thread={{
           title: thread.title,
           userName: thread.userName,

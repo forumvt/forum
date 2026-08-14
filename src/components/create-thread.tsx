@@ -2,14 +2,14 @@
 
 import { PlusIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { BBCodeEditor } from "@/components/bbcode-editor";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import type { ForumListItem } from "@/types/forum";
 
 function scrollToCreatedThread(threadId: string) {
@@ -20,9 +20,9 @@ function scrollToCreatedThread(threadId: string) {
     const el = document.getElementById(elId);
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
-      el
-        .querySelector<HTMLAnchorElement>('a[href^="/threads/"]')
-        ?.focus({ preventScroll: true });
+      el.querySelector<HTMLAnchorElement>('a[href^="/threads/"]')?.focus({
+        preventScroll: true,
+      });
       return;
     }
     if (Date.now() < deadline) {
@@ -40,19 +40,20 @@ function scrollToCreatedThread(threadId: string) {
 
 export function CreateThread({ forums }: { forums: ForumListItem[] }) {
   const [open, setOpen] = useState(false);
+  const [content, setContent] = useState("");
   const router = useRouter();
   const titleRef = useRef<HTMLInputElement>(null);
-  const contentRef = useRef<HTMLTextAreaElement>(null);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!content.trim()) return;
 
     const formData = new FormData(e.currentTarget);
 
     const payload = {
       forumId: formData.get("forumId"),
       title: formData.get("title"),
-      description: formData.get("content"),
+      description: content.trim(),
     };
 
     const res = await fetch("/api/threads", {
@@ -69,7 +70,7 @@ export function CreateThread({ forums }: { forums: ForumListItem[] }) {
     toast.success("Tópico criado com sucesso!");
 
     if (titleRef.current) titleRef.current.value = "";
-    if (contentRef.current) contentRef.current.value = "";
+    setContent("");
 
     router.refresh();
 
@@ -130,13 +131,11 @@ export function CreateThread({ forums }: { forums: ForumListItem[] }) {
 
             <div className="space-y-2">
               <Label htmlFor="novo-topico-conteudo">Conteúdo</Label>
-              <Textarea
-                ref={contentRef}
+              <BBCodeEditor
                 id="novo-topico-conteudo"
-                name="content"
-                rows={5}
-                required
-                className="min-h-32"
+                value={content}
+                onChange={setContent}
+                minHeightClass="min-h-32"
               />
             </div>
 
@@ -148,7 +147,9 @@ export function CreateThread({ forums }: { forums: ForumListItem[] }) {
               >
                 Cancelar
               </Button>
-              <Button type="submit">Publicar</Button>
+              <Button type="submit" disabled={!content.trim()}>
+                Publicar
+              </Button>
             </div>
           </form>
         </Card>

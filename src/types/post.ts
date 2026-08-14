@@ -10,4 +10,7 @@ export interface Post {
   isOriginalPoster: boolean;
   userAvatar: string | null;
   signature?: string | null;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
 }
