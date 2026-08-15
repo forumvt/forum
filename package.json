@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "db:insert-dream-topic": "tsx src/db/insert-dream-topic.ts",
+    "db:novotopic.ts": "tsx src/db/novotopic.ts",
+    "db:topico-memorias": "tsx src/db/topico-memorias.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
