@@ -14,9 +14,8 @@ export function canEditPost(
   return isStaff(sessionRole);
 }
 
-export function getSessionRole(
-  user: { role?: unknown } | null | undefined,
-): string | undefined {
-  if (typeof user?.role === "string") return user.role;
-  return undefined;
+export function getSessionRole(user: unknown): string | undefined {
+  if (!user || typeof user !== "object" || !("role" in user)) return undefined;
+  const role = (user as { role: unknown }).role;
+  return typeof role === "string" ? role : undefined;
 }
