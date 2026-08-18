@@ -2,8 +2,10 @@ import { redirect } from "next/navigation"
 import { Suspense } from "react"
 
 import { AvatarSettings } from "@/components/avatar-settings"
+import { NotificationSettings } from "@/components/notification-settings"
 import { SettingsSkeleton } from "@/components/settings-skeleton"
 import { auth } from "@/lib/auth"
+import * as notificationService from "@/services/notification.service"
 
 async function SettingsContent() {
   const session = await auth.api.getSession({
@@ -13,6 +15,8 @@ async function SettingsContent() {
   if (!session) {
     redirect("/")
   }
+
+  const preferences = await notificationService.getPreferences(session.user.id)
 
   return (
     <>
@@ -26,6 +30,14 @@ async function SettingsContent() {
       <div className="border-border bg-card rounded-lg border p-6">
         <h2 className="mb-4 text-xl font-semibold">Avatar</h2>
         <AvatarSettings user={session.user} />
+      </div>
+
+      <div className="border-border bg-card rounded-lg border p-6">
+        <h2 className="mb-1 text-xl font-semibold">Alertas</h2>
+        <p className="text-muted-foreground mb-4 text-sm">
+          Escolha quais notificações você quer receber.
+        </p>
+        <NotificationSettings initialPreferences={preferences} />
       </div>
     </>
   )

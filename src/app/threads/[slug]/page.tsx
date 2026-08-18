@@ -4,6 +4,7 @@ import { PostsPagination } from "@/components/posts-pagination";
 import { ThreadClient } from "@/components/thread-client-props";
 import { auth } from "@/lib/auth";
 import { resolveActor } from "@/lib/session-actor";
+import * as likeRepo from "@/repositories/like.repository";
 import * as postService from "@/services/post.service";
 import * as threadService from "@/services/thread.service";
 import type { Post } from "@/types/post";
@@ -57,6 +58,19 @@ export default async function ThreadPage({
   const { posts: dbPosts, totalCount, totalPages, currentPage } = postsResult;
 
   const actor = session?.user ? await resolveActor(session.user) : null;
+  const sessionUserId = session?.user?.id ?? null;
+
+  const [threadLikes, postLikes, receivedLikes] = await Promise.all([
+    likeRepo.findThreadLikeStats(thread.id, sessionUserId),
+    likeRepo.findPostLikeStats(
+      dbPosts.map((post) => post.id),
+      sessionUserId,
+    ),
+    likeRepo.findReceivedLikeCounts([
+      thread.userId,
+      ...dbPosts.map((post) => post.userId),
+    ]),
+  ]);
 
   const initialPost: Post = {
     id: `thread-${thread.id}`,
@@ -64,7 +78,9 @@ export default async function ThreadPage({
     title: "Membro",
     joinDate: "Desconhecido",
     posts: "0",
-    likes: "0",
+    likes: String(receivedLikes.get(thread.userId) ?? 0),
+    likeCount: threadLikes.count,
+    likedByMe: threadLikes.likedByMe,
     content: thread.description || "",
     timestamp: new Date(thread.createdAt).toLocaleString(),
     isOriginalPoster: true,
@@ -77,22 +93,27 @@ export default async function ThreadPage({
 
   const displayPosts: Post[] = [
     ...(currentPage === 1 ? [initialPost] : []),
-    ...dbPosts.map((post) => ({
-      id: post.id,
-      author: post.userName || "Usuário Anônimo",
-      title: "Membro",
-      joinDate: "Desconhecido",
-      posts: "0",
-      likes: "0",
-      content: post.content,
-      timestamp: new Date(post.createdAt).toLocaleString(),
-      isOriginalPoster: post.userId === thread.userId,
-      userAvatar: post.userAvatar,
-      signature: undefined,
-      userId: post.userId,
-      createdAt: post.createdAt.toISOString(),
-      updatedAt: post.updatedAt.toISOString(),
-    })),
+    ...dbPosts.map((post) => {
+      const likes = postLikes.get(post.id) ?? { count: 0, likedByMe: false };
+      return {
+        id: post.id,
+        author: post.userName || "Usuário Anônimo",
+        title: "Membro",
+        joinDate: "Desconhecido",
+        posts: "0",
+        likes: String(receivedLikes.get(post.userId) ?? 0),
+        likeCount: likes.count,
+        likedByMe: likes.likedByMe,
+        content: post.content,
+        timestamp: new Date(post.createdAt).toLocaleString(),
+        isOriginalPoster: post.userId === thread.userId,
+        userAvatar: post.userAvatar,
+        signature: undefined,
+        userId: post.userId,
+        createdAt: post.createdAt.toISOString(),
+        updatedAt: post.updatedAt.toISOString(),
+      };
+    }),
   ];
 
   return (

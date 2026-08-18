@@ -380,3 +380,27 @@ export async function markThreadAsRead(
       set: { lastReadAt: new Date() },
     });
 }
+
+export async function findMetaById(
+  threadId: string,
+): Promise<{ id: string; userId: string; title: string; slug: string } | null> {
+  const [row] = await db
+    .select({
+      id: threadTable.id,
+      userId: threadTable.userId,
+      title: threadTable.title,
+      slug: threadTable.slug,
+    })
+    .from(threadTable)
+    .where(eq(threadTable.id, threadId))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function findViewerUserIds(threadId: string): Promise<string[]> {
+  const rows = await db
+    .select({ userId: threadReadTable.userId })
+    .from(threadReadTable)
+    .where(eq(threadReadTable.threadId, threadId));
+  return rows.map((row) => row.userId);
+}

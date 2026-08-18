@@ -5,6 +5,8 @@ export interface Post {
   joinDate: string;
   posts: string;
   likes: string;
+  likeCount: number;
+  likedByMe: boolean;
   content: string;
   timestamp: string;
   isOriginalPoster: boolean;

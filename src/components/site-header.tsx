@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Suspense, useSyncExternalStore } from "react";
 
+import { NotificationBell } from "@/components/notification-bell";
 import { SearchForm } from "@/components/search-form";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -94,58 +95,61 @@ export function SiteHeader() {
           <ThemeSwitcher />
           {mounted ? (
             user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full"
-                    aria-label="Abrir menu da conta"
-                  >
-                    <Avatar className="size-8">
-                      <AvatarImage
-                        src={(user.image as string | undefined) || undefined}
-                        alt=""
-                      />
-                      <AvatarFallback>{initials}</AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
+              <>
+                <NotificationBell />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-full"
+                      aria-label="Abrir menu da conta"
+                    >
+                      <Avatar className="size-8">
+                        <AvatarImage
+                          src={(user.image as string | undefined) || undefined}
+                          alt=""
+                        />
+                        <AvatarFallback>{initials}</AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
 
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel className="flex items-center gap-2 font-normal">
-                    <Avatar className="size-8 shrink-0">
-                      <AvatarImage
-                        src={(user.image as string | undefined) || undefined}
-                        alt=""
-                      />
-                      <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <div className="truncate font-medium">{user.name}</div>
-                      <div className="text-muted-foreground truncate text-xs">
-                        {user.email}
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel className="flex items-center gap-2 font-normal">
+                      <Avatar className="size-8 shrink-0">
+                        <AvatarImage
+                          src={(user.image as string | undefined) || undefined}
+                          alt=""
+                        />
+                        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                          {initials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <div className="truncate font-medium">{user.name}</div>
+                        <div className="text-muted-foreground truncate text-xs">
+                          {user.email}
+                        </div>
                       </div>
-                    </div>
-                  </DropdownMenuLabel>
+                    </DropdownMenuLabel>
 
-                  <DropdownMenuSeparator />
+                    <DropdownMenuSeparator />
 
-                  <DropdownMenuItem onClick={() => router.push("/settings")}>
-                    <SettingsIcon />
-                    Configurações
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onClick={() => authClient.signOut()}
-                  >
-                    <LogOutIcon />
-                    Sair
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    <DropdownMenuItem onClick={() => router.push("/settings")}>
+                      <SettingsIcon />
+                      Configurações
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={() => authClient.signOut()}
+                    >
+                      <LogOutIcon />
+                      Sair
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
             ) : (
               <div className="flex items-center gap-1">
                 <LoginDialog />

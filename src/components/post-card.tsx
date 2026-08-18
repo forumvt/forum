@@ -2,6 +2,7 @@
 
 import { Loader2, MessageSquare, Pencil, ThumbsUp } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { BBCodeContent } from "@/components/bbcode-content";
 import { BBCodeEditor } from "@/components/bbcode-editor";
@@ -101,20 +102,36 @@ function PostActions({
   onReply,
   canEdit,
   onEdit,
+  likeCount,
+  likedByMe,
+  liking,
+  onLike,
 }: {
   onReply: () => void;
   canEdit: boolean;
   onEdit: () => void;
+  likeCount: number;
+  likedByMe: boolean;
+  liking: boolean;
+  onLike: () => void;
 }) {
   return (
     <div className="flex flex-wrap items-center justify-end gap-2">
       <Button
+        type="button"
         variant="ghost"
         size="sm"
-        className="text-muted-foreground hover:text-foreground"
+        className={
+          likedByMe
+            ? "text-primary hover:text-primary"
+            : "text-muted-foreground hover:text-foreground"
+        }
+        onClick={onLike}
+        disabled={liking}
+        aria-pressed={likedByMe}
       >
         <ThumbsUp />
-        Curtir
+        Curtir{likeCount > 0 ? ` ${likeCount}` : ""}
       </Button>
       {canEdit && (
         <Button
@@ -163,7 +180,7 @@ export function PostCard({
   threadSlug,
 }: {
   post: Post;
-  onReply: (user: string, content: string) => void;
+  onReply: (user: string, content: string, userId: string) => void;
   canEdit: boolean;
   threadSlug: string;
 }) {
@@ -173,6 +190,48 @@ export function PostCard({
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [likeCount, setLikeCount] = useState(post.likeCount);
+  const [likedByMe, setLikedByMe] = useState(post.likedByMe);
+  const [liking, setLiking] = useState(false);
+
+  async function toggleLike() {
+    if (liking) return;
+    setLiking(true);
+    const previousCount = likeCount;
+    const previousLiked = likedByMe;
+    setLikedByMe(!previousLiked);
+    setLikeCount(previousCount + (previousLiked ? -1 : 1));
+
+    const isOriginal = post.id.startsWith("thread-");
+    const url = isOriginal
+      ? `/api/threads/${threadSlug}/like`
+      : `/api/posts/${post.id}/like`;
+
+    try {
+      const res = await fetch(url, { method: "POST" });
+      if (res.status === 401) {
+        setLikedByMe(previousLiked);
+        setLikeCount(previousCount);
+        toast.error("Faça login para curtir.");
+        return;
+      }
+      if (!res.ok) {
+        setLikedByMe(previousLiked);
+        setLikeCount(previousCount);
+        toast.error("Não foi possível curtir.");
+        return;
+      }
+      const data = (await res.json()) as { liked: boolean };
+      setLikedByMe(data.liked);
+      setLikeCount(previousCount + (data.liked ? (previousLiked ? 0 : 1) : previousLiked ? -1 : 0));
+    } catch {
+      setLikedByMe(previousLiked);
+      setLikeCount(previousCount);
+      toast.error("Não foi possível curtir.");
+    } finally {
+      setLiking(false);
+    }
+  }
 
   function startEditing() {
     setDraft(content);
@@ -272,7 +331,11 @@ export function PostCard({
             <PostActions
               canEdit={canEdit}
               onEdit={startEditing}
-              onReply={() => onReply(post.author, content)}
+              onReply={() => onReply(post.author, content, post.userId)}
+              likeCount={likeCount}
+              likedByMe={likedByMe}
+              liking={liking}
+              onLike={() => void toggleLike()}
             />
           </div>
         )}
@@ -292,7 +355,11 @@ export function PostCard({
               <PostActions
                 canEdit={canEdit}
                 onEdit={startEditing}
-                onReply={() => onReply(post.author, content)}
+                onReply={() => onReply(post.author, content, post.userId)}
+                likeCount={likeCount}
+                likedByMe={likedByMe}
+                liking={liking}
+                onLike={() => void toggleLike()}
               />
             </div>
           )}

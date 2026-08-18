@@ -1,5 +1,11 @@
 export type { FilterType } from "./filters";
 export type { Forum, ForumListItem } from "./forum";
+export type {
+  NotificationItem,
+  NotificationPreferences,
+  NotificationsPayload,
+  NotificationType,
+} from "./notification";
 export type { Post } from "./post";
 export type {
   ThreadBySlug,

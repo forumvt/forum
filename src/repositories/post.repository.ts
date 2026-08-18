@@ -64,13 +64,16 @@ export async function findByThreadIdPaginated(
   return { posts, totalCount };
 }
 
-export async function findById(
-  id: string,
-): Promise<{ id: string; userId: string } | null> {
+export async function findById(id: string): Promise<{
+  id: string;
+  userId: string;
+  threadId: string;
+} | null> {
   const [row] = await db
     .select({
       id: postTable.id,
       userId: postTable.userId,
+      threadId: postTable.threadId,
     })
     .from(postTable)
     .where(eq(postTable.id, id))

@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
 import {
   boolean,
+  index,
   integer,
   pgEnum,
   pgTable,
@@ -193,3 +194,87 @@ export const verificationTable = pgTable("verification", {
     () => /* @__PURE__ */ new Date(),
   ),
 });
+
+export const notificationTypeEnum = pgEnum("notification_type", [
+  "own_thread",
+  "viewed_thread",
+  "like",
+  "reply",
+]);
+
+export const notificationTable = pgTable(
+  "notification",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    type: notificationTypeEnum("type").notNull(),
+    actorUserId: text("actor_user_id").references(() => userTable.id, {
+      onDelete: "set null",
+    }),
+    threadId: uuid("thread_id")
+      .notNull()
+      .references(() => threadTable.id, { onDelete: "cascade" }),
+    postId: uuid("post_id").references(() => postTable.id, {
+      onDelete: "set null",
+    }),
+    readAt: timestamp("read_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    userCreatedIdx: index("notification_user_created_idx").on(
+      t.userId,
+      t.createdAt,
+    ),
+    userReadIdx: index("notification_user_read_idx").on(t.userId, t.readAt),
+  }),
+);
+
+export const userNotificationPreferenceTable = pgTable(
+  "user_notification_preference",
+  {
+    userId: text("user_id")
+      .primaryKey()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    ownThread: boolean("own_thread").notNull().default(true),
+    viewedThread: boolean("viewed_thread").notNull().default(true),
+    like: boolean("like").notNull().default(true),
+    reply: boolean("reply").notNull().default(true),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+);
+
+export const postLikeTable = pgTable(
+  "post_like",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    postId: uuid("post_id")
+      .notNull()
+      .references(() => postTable.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    userPostUnique: unique().on(t.userId, t.postId),
+  }),
+);
+
+export const threadLikeTable = pgTable(
+  "thread_like",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    threadId: uuid("thread_id")
+      .notNull()
+      .references(() => threadTable.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    userThreadUnique: unique().on(t.userId, t.threadId),
+  }),
+);

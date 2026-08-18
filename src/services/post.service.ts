@@ -2,22 +2,33 @@ import { db } from "@/db";
 import { canEditPost } from "@/lib/permissions";
 import * as postRepo from "@/repositories/post.repository";
 import * as threadRepo from "@/repositories/thread.repository";
+import * as notificationService from "@/services/notification.service";
 
 export async function addReply(
   threadId: string,
   userId: string,
   content: string,
+  quotedUserId?: string | null,
 ): Promise<{ id: string }> {
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const dbOrTx = tx as unknown as typeof db;
-    const result = await postRepo.create(dbOrTx, {
+    const created = await postRepo.create(dbOrTx, {
       threadId,
       userId,
       content,
     });
     await threadRepo.updateLastPost(dbOrTx, threadId, userId);
-    return result;
+    return created;
   });
+
+  await notificationService.notifyForReply({
+    actorUserId: userId,
+    threadId,
+    postId: result.id,
+    quotedUserId,
+  });
+
+  return result;
 }
 
 export interface GetPostsParams {

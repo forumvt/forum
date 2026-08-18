@@ -106,8 +106,8 @@ export function ThreadClient({
             post={post}
             canEdit={canEditPost(actorId, actorRole, post.userId)}
             threadSlug={threadSlug}
-            onReply={(user, content) =>
-              replyFormRef.current?.replyTo(user, content)
+            onReply={(user, content, replyUserId) =>
+              replyFormRef.current?.replyTo(user, content, replyUserId)
             }
           />
         ))}

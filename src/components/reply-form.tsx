@@ -13,7 +13,7 @@ import { LoginDialog } from "./login-dialog";
 import { RegisterDialog } from "./register-dialog";
 
 export interface ReplyFormHandle {
-  replyTo: (username: string, content: string) => void;
+  replyTo: (username: string, content: string, userId: string) => void;
 }
 
 interface ReplyFormProps {
@@ -26,13 +26,15 @@ interface ReplyFormProps {
 export const ReplyForm = forwardRef<ReplyFormHandle, ReplyFormProps>(
   ({ threadId, userId, isAuthenticated, forum }, ref) => {
     const [content, setContent] = useState("");
+    const [quotedUserId, setQuotedUserId] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const editorWrapRef = useRef<HTMLDivElement | null>(null);
 
     useImperativeHandle(ref, () => ({
-      replyTo(username: string, postContent: string) {
+      replyTo(username: string, postContent: string, quotedId: string) {
         const quoted = `[quote=${username}]${postContent}[/quote]\n\n`;
         setContent(quoted);
+        setQuotedUserId(quotedId);
 
         setTimeout(() => {
           editorWrapRef.current?.scrollIntoView({
@@ -58,11 +60,13 @@ export const ReplyForm = forwardRef<ReplyFormHandle, ReplyFormProps>(
             content: content.trim(),
             threadId,
             userId,
+            quotedUserId,
           }),
         });
 
         if (res.ok) {
           setContent("");
+          setQuotedUserId(null);
           window.location.reload();
         } else {
           const data = await res.json();

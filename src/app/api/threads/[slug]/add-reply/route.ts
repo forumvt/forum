@@ -14,7 +14,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { content, threadId } = await request.json();
+    const { content, threadId, quotedUserId } = await request.json();
 
     if (!content || !threadId) {
       return NextResponse.json(
@@ -27,6 +27,7 @@ export async function POST(request: Request) {
       threadId,
       session.user.id,
       content,
+      typeof quotedUserId === "string" ? quotedUserId : null,
     );
 
     return NextResponse.json({ success: true, post: { id: result.id } });

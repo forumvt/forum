@@ -5,6 +5,7 @@ import {
   normalizeSearchQuery,
 } from "@/lib/search";
 import * as threadRepo from "@/repositories/thread.repository";
+import * as notificationService from "@/services/notification.service";
 import type { FilterType } from "@/types/filters";
 import type {
   ThreadBySlug,
@@ -141,7 +142,8 @@ export async function markThreadAsRead(
   threadId: string,
   userId: string,
 ): Promise<void> {
-  return threadRepo.markThreadAsRead(threadId, userId);
+  await threadRepo.markThreadAsRead(threadId, userId);
+  await notificationService.markThreadNotificationsAsRead(userId, threadId);
 }
 
 export async function incrementThreadViews(threadId: string): Promise<void> {
