@@ -7,6 +7,7 @@ import {
   Home,
   MessageSquare,
   MessageSquareText,
+  Search,
   Settings,
   TvIcon,
 } from "lucide-react";
@@ -35,6 +36,7 @@ import {
 
 const mainNav = [
   { title: "Início", icon: Home, url: "/" },
+  { title: "Pesquisar", icon: Search, url: "/search" },
   { title: "Fóruns", icon: TvIcon, url: "/forums" },
   { title: "Gaming", icon: Gamepad2, url: "/forums/jogos-em-geral" },
   {

@@ -1,5 +1,5 @@
 import { aliasedTable } from "drizzle-orm";
-import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, isNotNull, or, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import {
@@ -9,8 +9,13 @@ import {
   threadTable,
   userTable,
 } from "@/db/schema";
+import { toIlikePattern } from "@/lib/search";
 import type { FilterType } from "@/types/filters";
-import type { ThreadBySlug, ThreadListItem } from "@/types/thread";
+import type {
+  ThreadBySlug,
+  ThreadListItem,
+  ThreadSearchRow,
+} from "@/types/thread";
 
 type Db = typeof db;
 
@@ -192,6 +197,114 @@ export async function findManyPaginated(
     .offset((page - 1) * per);
 
   return { threads: threads as ThreadListItem[], totalCount };
+}
+
+export interface SearchPaginatedOptions {
+  query: string;
+  sessionUserId: string | null;
+  page: number;
+  per: number;
+}
+
+export async function searchPaginated(
+  options: SearchPaginatedOptions,
+): Promise<{ threads: ThreadSearchRow[]; totalCount: number }> {
+  const { query, sessionUserId, page, per } = options;
+  const effectiveUserId = sessionUserId ?? NO_SESSION_USER_ID;
+  const pattern = toIlikePattern(query);
+
+  const postsMatch = sql`EXISTS (
+    SELECT 1 FROM ${postTable}
+    WHERE ${postTable.threadId} = ${threadTable.id}
+      AND ${postTable.content} ILIKE ${pattern}
+  )`;
+
+  const searchWhere = or(
+    ilike(threadTable.title, pattern),
+    ilike(threadTable.description, pattern),
+    postsMatch,
+  );
+
+  const [countRow] = await db
+    .select({ totalCount: sql<number>`count(*)::int` })
+    .from(threadTable)
+    .where(searchWhere);
+  const totalCount = countRow?.totalCount ?? 0;
+
+  const matchedPostContent = sql<string | null>`MAX((
+    CASE
+      WHEN ${threadTable.description} ILIKE ${pattern} THEN ${threadTable.description}
+      ELSE (
+        SELECT mp.content
+        FROM post mp
+        WHERE mp.thread_id = ${threadTable.id}
+          AND mp.content ILIKE ${pattern}
+        ORDER BY mp.created_at ASC
+        LIMIT 1
+      )
+    END
+  ))`;
+
+  const threads = await db
+    .select({
+      id: threadTable.id,
+      title: threadTable.title,
+      slug: threadTable.slug,
+      description: threadTable.description,
+      createdAt: threadTable.createdAt,
+      views: threadTable.views,
+      lastPostAt: threadTable.lastPostAt,
+      postsCount: sql<number>`COUNT(${postTable.id})`.mapWith(Number),
+      lastReadAt: threadReadTable.lastReadAt,
+      isUnread: sql<boolean>`
+        ${threadReadTable.lastReadAt} IS NULL
+        OR ${threadReadTable.lastReadAt} < ${threadTable.lastPostAt}
+      `,
+      userName: userTable.name,
+      userAvatar: userTable.image,
+      lastPostUserName: lastPostUser.name,
+      lastPostUserAvatar: lastPostUser.image,
+      forumTitle: forumTable.title,
+      forumSlug: forumTable.slug,
+      matchedPostContent,
+    })
+    .from(threadTable)
+    .leftJoin(postTable, eq(postTable.threadId, threadTable.id))
+    .leftJoin(userTable, eq(threadTable.userId, userTable.id))
+    .leftJoin(lastPostUser, eq(threadTable.lastPostUserId, lastPostUser.id))
+    .leftJoin(forumTable, eq(threadTable.forumId, forumTable.id))
+    .leftJoin(
+      threadReadTable,
+      and(
+        eq(threadReadTable.threadId, threadTable.id),
+        eq(threadReadTable.userId, effectiveUserId),
+      ),
+    )
+    .where(searchWhere)
+    .groupBy(
+      threadTable.id,
+      threadTable.title,
+      threadReadTable.lastReadAt,
+      threadTable.slug,
+      threadTable.description,
+      threadTable.views,
+      threadTable.lastPostAt,
+      threadTable.createdAt,
+      userTable.name,
+      userTable.image,
+      lastPostUser.name,
+      lastPostUser.image,
+      forumTable.title,
+      forumTable.slug,
+    )
+    .orderBy(desc(threadTable.lastPostAt))
+    .limit(per)
+    .offset((page - 1) * per);
+
+  return {
+    threads: threads as ThreadSearchRow[],
+    totalCount,
+  };
 }
 
 export async function create(data: {

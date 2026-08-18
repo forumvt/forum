@@ -1,7 +1,16 @@
 import { canEditPost } from "@/lib/permissions";
+import {
+  excerptAroundMatch,
+  MIN_SEARCH_QUERY_LENGTH,
+  normalizeSearchQuery,
+} from "@/lib/search";
 import * as threadRepo from "@/repositories/thread.repository";
 import type { FilterType } from "@/types/filters";
-import type { ThreadBySlug, ThreadListItem } from "@/types/thread";
+import type {
+  ThreadBySlug,
+  ThreadListItem,
+  ThreadSearchItem,
+} from "@/types/thread";
 
 function generateSlug(title: string): string {
   const randomString = Math.random().toString(36).substring(2, 7);
@@ -43,6 +52,61 @@ export async function listThreads(
   const totalPages = Math.ceil(totalCount / per) || 1;
   const currentPage = Math.min(Math.max(1, page), totalPages);
   return { threads, totalCount, totalPages, currentPage };
+}
+
+export interface SearchThreadsParams {
+  query: string;
+  page: number;
+  per: number;
+  sessionUserId: string | null;
+}
+
+export interface SearchThreadsResult {
+  query: string;
+  threads: ThreadSearchItem[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+}
+
+export async function searchThreads(
+  params: SearchThreadsParams,
+): Promise<SearchThreadsResult> {
+  const query = normalizeSearchQuery(params.query);
+  if (query.length < MIN_SEARCH_QUERY_LENGTH) {
+    return {
+      query,
+      threads: [],
+      totalCount: 0,
+      totalPages: 1,
+      currentPage: 1,
+    };
+  }
+
+  const { threads, totalCount } = await threadRepo.searchPaginated({
+    query,
+    sessionUserId: params.sessionUserId,
+    page: params.page,
+    per: params.per,
+  });
+
+  const totalPages = Math.ceil(totalCount / params.per) || 1;
+  const currentPage = Math.min(Math.max(1, params.page), totalPages);
+
+  return {
+    query,
+    threads: threads.map((thread) => {
+      const { matchedPostContent, ...rest } = thread;
+      const source = matchedPostContent || rest.description;
+      return {
+        ...rest,
+        snippet: excerptAroundMatch(source, query),
+      };
+    }),
+    totalCount,
+    totalPages,
+    currentPage,
+  };
 }
 
 export async function getThreadBySlug(

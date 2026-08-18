@@ -3,10 +3,10 @@
 import { LogOutIcon, Search, SettingsIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSyncExternalStore } from "react";
+import { Suspense, useSyncExternalStore } from "react";
 
+import { SearchForm } from "@/components/search-form";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authClient } from "@/lib/auth-client";
 
@@ -65,16 +65,26 @@ export function SiteHeader() {
 
         {/* Search */}
         <div className="mx-auto hidden max-w-xl min-w-0 flex-1 items-center md:flex">
-          <div className="relative w-full">
-            <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-            <Input
-              type="search"
-              placeholder="Pesquisar..."
-              className="w-full pl-9"
-              aria-label="Pesquisar no fórum"
-            />
-          </div>
+          <Suspense
+            fallback={
+              <Skeleton className="h-9 w-full rounded-md" aria-hidden="true" />
+            }
+          >
+            <SearchForm />
+          </Suspense>
         </div>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          asChild
+          aria-label="Pesquisar tópicos"
+        >
+          <Link href={"/search" as never}>
+            <Search className="size-4" />
+          </Link>
+        </Button>
 
         <nav
           className="ml-auto flex shrink-0 items-center gap-1"

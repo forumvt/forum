@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { HighlightText } from "@/components/highlight-text";
 import {
   Tooltip,
   TooltipContent,
@@ -17,11 +18,13 @@ export function ThreadTitleWithPreview({
   description,
   slug,
   isUnread,
+  highlightQuery,
 }: {
   title: string;
   description: string;
   slug: string;
   isUnread: boolean;
+  highlightQuery?: string;
 }) {
   const preview =
     description.length > PREVIEW_MAX_LENGTH
@@ -43,7 +46,11 @@ export function ThreadTitleWithPreview({
                 : "text-muted-foreground font-normal",
             )}
           >
-            {title}
+            {highlightQuery ? (
+              <HighlightText text={title} query={highlightQuery} />
+            ) : (
+              title
+            )}
           </h3>
         </Link>
       </TooltipTrigger>

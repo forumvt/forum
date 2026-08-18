@@ -6,4 +6,5 @@ export type {
   ThreadClientProps,
   ThreadHeaderInfo,
   ThreadListItem,
+  ThreadSearchItem,
 } from "./thread";

@@ -17,6 +17,18 @@ export interface ThreadListItem {
   lastPostUserAvatar: string | null;
 }
 
+export interface ThreadSearchItem extends ThreadListItem {
+  forumTitle: string | null;
+  forumSlug: string | null;
+  snippet: string;
+}
+
+export interface ThreadSearchRow extends ThreadListItem {
+  forumTitle: string | null;
+  forumSlug: string | null;
+  matchedPostContent: string | null;
+}
+
 export interface ThreadBySlug {
   id: string;
   title: string;
