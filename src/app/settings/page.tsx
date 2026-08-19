@@ -1,9 +1,12 @@
+import Link from "next/link"
 import { redirect } from "next/navigation"
 import { Suspense } from "react"
 
 import { AvatarSettings } from "@/components/avatar-settings"
 import { NotificationSettings } from "@/components/notification-settings"
 import { SettingsSkeleton } from "@/components/settings-skeleton"
+import { Button } from "@/components/ui/button"
+import { userProfilePath } from "@/lib/app-url"
 import { auth } from "@/lib/auth"
 import * as notificationService from "@/services/notification.service"
 
@@ -20,11 +23,18 @@ async function SettingsContent() {
 
   return (
     <>
-      <div>
-        <h1 className="text-2xl font-bold sm:text-3xl">Configurações</h1>
-        <p className="text-muted-foreground">
-          Gerencie suas configurações de conta e preferências.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold sm:text-3xl">Configurações</h1>
+          <p className="text-muted-foreground">
+            Gerencie suas configurações de conta e preferências.
+          </p>
+        </div>
+        <Button variant="outline" asChild>
+          <Link href={userProfilePath(session.user.id) as never}>
+            Ver perfil público
+          </Link>
+        </Button>
       </div>
 
       <div className="border-border bg-card rounded-lg border p-6">

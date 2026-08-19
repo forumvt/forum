@@ -9,9 +9,9 @@ import { RightRail } from "@/components/right-rail";
 import { SearchForm } from "@/components/search-form";
 import { ThreadTitleWithPreview } from "@/components/thread-title-with-preview";
 import { ThreadsPagination } from "@/components/threads-pagination";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { UserAvatarLink, UserNameLink } from "@/components/user-link";
 import { auth } from "@/lib/auth";
 import { MIN_SEARCH_QUERY_LENGTH, normalizeSearchQuery } from "@/lib/search";
 import * as threadService from "@/services/thread.service";
@@ -132,21 +132,20 @@ async function SearchResults({
             <div className="p-4 sm:p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                 <div className="flex items-center gap-3 sm:flex-col sm:items-center">
-                  <Avatar className="border-border h-10 w-10 flex-shrink-0 rounded-none border sm:h-12 sm:w-12">
-                    <AvatarImage
-                      src={thread.userAvatar || "/placeholder.svg"}
-                      alt={thread.userName || "Usuário"}
-                    />
-                    <AvatarFallback className="bg-muted text-muted-foreground">
-                      {thread.title.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                  <UserAvatarLink
+                    userId={thread.userId}
+                    name={thread.userName}
+                    avatar={thread.userAvatar}
+                    className="h-10 w-10 sm:h-12 sm:w-12"
+                  />
                   <div className="sm:hidden">
                     <div className="text-muted-foreground flex items-center gap-1 text-xs">
                       <User className="h-3 w-3" />
-                      <span className="font-medium text-foreground">
-                        {thread.userName || "Usuário Anônimo"}
-                      </span>
+                      <UserNameLink
+                        userId={thread.userId}
+                        name={thread.userName}
+                        className="font-medium text-foreground"
+                      />
                     </div>
                   </div>
                 </div>
@@ -177,9 +176,11 @@ async function SearchResults({
                     )}
                     <div className="hidden items-center gap-1 sm:flex">
                       <User className="h-3 w-3" />
-                      <span className="font-medium text-foreground">
-                        {thread.userName || "Usuário Anônimo"}
-                      </span>
+                      <UserNameLink
+                        userId={thread.userId}
+                        name={thread.userName}
+                        className="font-medium text-foreground"
+                      />
                     </div>
                     <div className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />

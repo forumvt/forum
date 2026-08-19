@@ -7,3 +7,7 @@ export function getPublicAppUrl(): string {
   }
   return process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "";
 }
+
+export function userProfilePath(userId: string): string {
+  return `/users/${encodeURIComponent(userId)}`;
+}

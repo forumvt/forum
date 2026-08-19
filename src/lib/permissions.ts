@@ -4,6 +4,22 @@ export function isStaff(role?: string | null): boolean {
   return role === "ADMINISTRATOR" || role === "MODERATOR";
 }
 
+export function roleLabel(role?: string | null): string {
+  switch (role) {
+    case "ADMINISTRATOR":
+      return "Administrador";
+    case "MODERATOR":
+      return "Moderador";
+    default:
+      return "Membro";
+  }
+}
+
+export function toUserRole(role?: string | null): UserRole {
+  if (role === "ADMINISTRATOR" || role === "MODERATOR") return role;
+  return "USER";
+}
+
 export function canEditPost(
   sessionUserId: string | undefined,
   sessionRole: string | undefined,

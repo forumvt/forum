@@ -8,8 +8,8 @@ import { RightRail } from "@/components/right-rail";
 import { ThreadFilters } from "@/components/thread-filters";
 import { ThreadTitleWithPreview } from "@/components/thread-title-with-preview";
 import { ThreadsPagination } from "@/components/threads-pagination";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
+import { UserAvatarLink, UserNameLink } from "@/components/user-link";
 import { auth } from "@/lib/auth";
 import * as forumService from "@/services/forum.service";
 import * as threadService from "@/services/thread.service";
@@ -92,21 +92,20 @@ async function HomeContent({
                 <div className="p-4 sm:p-6">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                     <div className="flex items-center gap-3 sm:flex-col sm:items-center">
-                      <Avatar className="border-border h-10 w-10 flex-shrink-0 rounded-none border sm:h-12 sm:w-12">
-                        <AvatarImage
-                          src={thread.userAvatar || "/placeholder.svg"}
-                          alt={thread.userName || "Usuário"}
-                        />
-                        <AvatarFallback className="bg-muted text-muted-foreground">
-                          {thread.title.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
+                      <UserAvatarLink
+                        userId={thread.userId}
+                        name={thread.userName}
+                        avatar={thread.userAvatar}
+                        className="h-10 w-10 sm:h-12 sm:w-12"
+                      />
                       <div className="sm:hidden">
                         <div className="text-muted-foreground flex items-center gap-1 text-xs">
                           <User className="h-3 w-3" />
-                          <span className="font-medium text-foreground">
-                            {thread.userName || "Usuário Anônimo"}
-                          </span>
+                          <UserNameLink
+                            userId={thread.userId}
+                            name={thread.userName}
+                            className="font-medium text-foreground"
+                          />
                         </div>
                       </div>
                     </div>
@@ -123,9 +122,11 @@ async function HomeContent({
                       <div className="text-muted-foreground flex flex-col gap-2 text-xs sm:flex-row sm:items-center sm:gap-3">
                         <div className="hidden items-center gap-1 sm:flex">
                           <User className="h-3 w-3" />
-                          <span className="font-medium text-foreground">
-                            {thread.userName || "Usuário Anônimo"}
-                          </span>
+                          <UserNameLink
+                            userId={thread.userId}
+                            name={thread.userName}
+                            className="font-medium text-foreground"
+                          />
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
@@ -140,9 +141,17 @@ async function HomeContent({
                             <MessageSquare className="h-3 w-3" />
                             <span>
                               Última resposta
-                              {thread.lastPostUserName
-                                ? ` por ${thread.lastPostUserName}`
-                                : ""}{" "}
+                              {thread.lastPostUserName ? (
+                                <>
+                                  {" "}
+                                  por{" "}
+                                  <UserNameLink
+                                    userId={thread.lastPostUserId}
+                                    name={thread.lastPostUserName}
+                                    className="font-medium text-foreground"
+                                  />
+                                </>
+                              ) : null}{" "}
                               em{" "}
                               {new Date(thread.lastPostAt).toLocaleDateString(
                                 "pt-BR"

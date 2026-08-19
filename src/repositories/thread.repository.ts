@@ -155,8 +155,10 @@ export async function findManyPaginated(
         ${threadReadTable.lastReadAt} IS NULL
         OR ${threadReadTable.lastReadAt} < ${threadTable.lastPostAt}
       `,
+      userId: threadTable.userId,
       userName: userTable.name,
       userAvatar: userTable.image,
+      lastPostUserId: threadTable.lastPostUserId,
       lastPostUserName: lastPostUser.name,
       lastPostUserAvatar: lastPostUser.image,
     })
@@ -181,6 +183,8 @@ export async function findManyPaginated(
     threadTable.description,
     threadTable.views,
     threadTable.lastPostAt,
+    threadTable.userId,
+    threadTable.lastPostUserId,
     userTable.name,
     userTable.image,
     lastPostUser.name,
@@ -260,8 +264,10 @@ export async function searchPaginated(
         ${threadReadTable.lastReadAt} IS NULL
         OR ${threadReadTable.lastReadAt} < ${threadTable.lastPostAt}
       `,
+      userId: threadTable.userId,
       userName: userTable.name,
       userAvatar: userTable.image,
+      lastPostUserId: threadTable.lastPostUserId,
       lastPostUserName: lastPostUser.name,
       lastPostUserAvatar: lastPostUser.image,
       forumTitle: forumTable.title,
@@ -290,6 +296,8 @@ export async function searchPaginated(
       threadTable.views,
       threadTable.lastPostAt,
       threadTable.createdAt,
+      threadTable.userId,
+      threadTable.lastPostUserId,
       userTable.name,
       userTable.image,
       lastPostUser.name,

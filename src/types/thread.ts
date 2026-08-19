@@ -11,8 +11,10 @@ export interface ThreadListItem {
   postsCount: number;
   lastReadAt: Date | null;
   isUnread: boolean;
+  userId: string;
   userName: string | null;
   userAvatar: string | null;
+  lastPostUserId: string | null;
   lastPostUserName: string | null;
   lastPostUserAvatar: string | null;
 }
@@ -47,6 +49,7 @@ export interface ThreadBySlug {
 
 export interface ThreadHeaderInfo {
   title: string;
+  userId: string;
   userName: string | null;
   createdAt: Date;
 }

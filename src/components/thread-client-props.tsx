@@ -14,6 +14,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { UserNameLink } from "@/components/user-link";
 import { authClient } from "@/lib/auth-client";
 import { canEditPost, getSessionRole } from "@/lib/permissions";
 import type { ThreadClientProps as ThreadClientPropsType } from "@/types/thread";
@@ -21,7 +22,12 @@ import type { ThreadClientProps as ThreadClientPropsType } from "@/types/thread"
 function ThreadHeader({
   thread,
 }: {
-  thread: { title: string; userName: string | null; createdAt: Date };
+  thread: {
+    title: string;
+    userId: string;
+    userName: string | null;
+    createdAt: Date;
+  };
 }) {
   return (
     <div className="chaos-card bg-primary text-primary-foreground p-4 md:p-6">
@@ -32,9 +38,11 @@ function ThreadHeader({
         <div className="flex min-w-0 items-center gap-1">
           <User className="size-4 shrink-0" />
           <span className="hidden md:inline">Autor:</span>
-          <span className="truncate font-medium">
-            {thread.userName || "Usuário Anônimo"}
-          </span>
+          <UserNameLink
+            userId={thread.userId}
+            name={thread.userName}
+            className="truncate font-medium text-primary-foreground hover:text-primary-foreground/90"
+          />
         </div>
         <div className="flex items-center gap-1">
           <Clock className="size-4 shrink-0" />

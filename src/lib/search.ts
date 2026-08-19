@@ -13,6 +13,17 @@ export function toIlikePattern(query: string): string {
   return `%${sanitized}%`;
 }
 
+export function excerptStart(
+  text: string,
+  maxLength = SEARCH_SNIPPET_LENGTH,
+): string {
+  const stripped = stripBBCode(text);
+  if (!stripped) return "";
+  return stripped.length > maxLength
+    ? `${stripped.slice(0, maxLength)}…`
+    : stripped;
+}
+
 export function excerptAroundMatch(
   text: string,
   query: string,

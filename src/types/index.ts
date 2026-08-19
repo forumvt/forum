@@ -14,3 +14,11 @@ export type {
   ThreadListItem,
   ThreadSearchItem,
 } from "./thread";
+export type {
+  UserIdentity,
+  UserPostItem,
+  UserPreview,
+  UserProfile,
+  UserProfileTab,
+  UserThreadItem,
+} from "./user";

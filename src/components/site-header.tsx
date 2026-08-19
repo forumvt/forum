@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOutIcon, Search, SettingsIcon } from "lucide-react";
+import { LogOutIcon, Search, SettingsIcon, UserIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Suspense, useSyncExternalStore } from "react";
@@ -9,6 +9,7 @@ import { NotificationBell } from "@/components/notification-bell";
 import { SearchForm } from "@/components/search-form";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { userProfilePath } from "@/lib/app-url";
 import { authClient } from "@/lib/auth-client";
 
 import { LoginDialog } from "./login-dialog";
@@ -136,6 +137,14 @@ export function SiteHeader() {
 
                     <DropdownMenuSeparator />
 
+                    <DropdownMenuItem
+                      onClick={() =>
+                        router.push(userProfilePath(user.id) as never)
+                      }
+                    >
+                      <UserIcon />
+                      Meu perfil
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push("/settings")}>
                       <SettingsIcon />
                       Configurações

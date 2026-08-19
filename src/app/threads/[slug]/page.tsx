@@ -3,11 +3,15 @@ import { headers } from "next/headers";
 import { PostsPagination } from "@/components/posts-pagination";
 import { ThreadClient } from "@/components/thread-client-props";
 import { auth } from "@/lib/auth";
+import { roleLabel } from "@/lib/permissions";
 import { resolveActor } from "@/lib/session-actor";
+import { formatMemberSince } from "@/lib/utils";
 import * as likeRepo from "@/repositories/like.repository";
 import * as postService from "@/services/post.service";
 import * as threadService from "@/services/thread.service";
+import * as userService from "@/services/user.service";
 import type { Post } from "@/types/post";
+import type { UserIdentity } from "@/types/user";
 
 const DEFAULT_PER = 50;
 
@@ -60,25 +64,33 @@ export default async function ThreadPage({
   const actor = session?.user ? await resolveActor(session.user) : null;
   const sessionUserId = session?.user?.id ?? null;
 
-  const [threadLikes, postLikes, receivedLikes] = await Promise.all([
+  const [threadLikes, postLikes, identities] = await Promise.all([
     likeRepo.findThreadLikeStats(thread.id, sessionUserId),
     likeRepo.findPostLikeStats(
       dbPosts.map((post) => post.id),
       sessionUserId,
     ),
-    likeRepo.findReceivedLikeCounts([
+    userService.getIdentityMap([
       thread.userId,
       ...dbPosts.map((post) => post.userId),
     ]),
   ]);
 
+  function identityFields(identity: UserIdentity | undefined) {
+    return {
+      title: roleLabel(identity?.role),
+      joinDate: formatMemberSince(identity?.createdAt),
+      posts: (identity?.postsCount ?? 0).toLocaleString("pt-BR"),
+      likes: (identity?.likesReceived ?? 0).toLocaleString("pt-BR"),
+    };
+  }
+
+  const threadIdentity = identities.get(thread.userId);
+
   const initialPost: Post = {
     id: `thread-${thread.id}`,
     author: thread.userName || "Usuário Anônimo",
-    title: "Membro",
-    joinDate: "Desconhecido",
-    posts: "0",
-    likes: String(receivedLikes.get(thread.userId) ?? 0),
+    ...identityFields(threadIdentity),
     likeCount: threadLikes.count,
     likedByMe: threadLikes.likedByMe,
     content: thread.description || "",
@@ -98,10 +110,7 @@ export default async function ThreadPage({
       return {
         id: post.id,
         author: post.userName || "Usuário Anônimo",
-        title: "Membro",
-        joinDate: "Desconhecido",
-        posts: "0",
-        likes: String(receivedLikes.get(post.userId) ?? 0),
+        ...identityFields(identities.get(post.userId)),
         likeCount: likes.count,
         likedByMe: likes.likedByMe,
         content: post.content,
@@ -129,6 +138,7 @@ export default async function ThreadPage({
         currentUserRole={actor?.role}
         thread={{
           title: thread.title,
+          userId: thread.userId,
           userName: thread.userName,
           createdAt: thread.createdAt,
         }}

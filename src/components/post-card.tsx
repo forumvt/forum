@@ -8,9 +8,9 @@ import { BBCodeContent } from "@/components/bbcode-content";
 import { BBCodeEditor } from "@/components/bbcode-editor";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { UserAvatarLink, UserNameLink } from "@/components/user-link";
 import type { Post } from "@/types/post";
 
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 
 function wasEdited(createdAt: string, updatedAt: string): boolean {
@@ -31,19 +31,14 @@ function UserSidebar({ post }: { post: Post }) {
   return (
     <div className="border-border bg-muted w-48 shrink-0 border-r p-4">
       <div className="text-center">
-        <Avatar className="border-border mx-auto mb-2 size-36 rounded-none border">
-          <AvatarImage
-            src={
-              post.userAvatar ||
-              `/placeholder.svg?height=64&width=64&query=${post.author}`
-            }
-          />
-          <AvatarFallback className="bg-muted text-muted-foreground">
-            {post.author.slice(0, 2).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
+        <UserAvatarLink
+          userId={post.userId}
+          name={post.author}
+          avatar={post.userAvatar}
+          className="mx-auto mb-2 size-36"
+        />
         <h3 className="text-foreground font-semibold break-words">
-          {post.author}
+          <UserNameLink userId={post.userId} name={post.author} />
         </h3>
         <div className="mt-2 flex flex-wrap justify-center gap-1">
           <Badge variant="secondary">{post.title}</Badge>
@@ -63,22 +58,17 @@ function MobilePostHeader({ post }: { post: Post }) {
   return (
     <div className="border-border bg-muted border-b p-4">
       <div className="flex items-center gap-3">
-        <Avatar className="border-border size-12 shrink-0 rounded-none border">
-          <AvatarImage
-            src={
-              post.userAvatar ||
-              `/placeholder.svg?height=48&width=48&query=${post.author}`
-            }
-          />
-          <AvatarFallback className="bg-muted text-muted-foreground">
-            {post.author.slice(0, 2).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
+        <UserAvatarLink
+          userId={post.userId}
+          name={post.author}
+          avatar={post.userAvatar}
+          className="size-12"
+        />
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-foreground font-semibold break-words">
-              {post.author}
+              <UserNameLink userId={post.userId} name={post.author} />
             </h3>
             <Badge variant="secondary">{post.title}</Badge>
             {post.isOriginalPoster && <Badge>OP</Badge>}

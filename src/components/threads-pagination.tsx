@@ -11,6 +11,7 @@ interface ThreadsPaginationProps {
   basePath: string;
   /** Optional query params to preserve (e.g. filter) */
   queryParams?: Record<string, string>;
+  itemLabel?: string;
 }
 
 function buildPageUrl(
@@ -34,6 +35,7 @@ export function ThreadsPagination({
   per,
   basePath,
   queryParams,
+  itemLabel = "tópicos",
 }: ThreadsPaginationProps) {
   if (totalItems === 0) return null;
 
@@ -57,13 +59,13 @@ export function ThreadsPagination({
 
   return (
     <nav
-      aria-label="Paginação de tópicos"
+      aria-label={`Paginação de ${itemLabel}`}
       className="border-border flex flex-col gap-4 border-t pt-4 sm:flex-row sm:items-center sm:justify-between"
     >
       <p className="text-muted-foreground text-sm">
         Mostrando <span className="font-medium">{start}</span>–
         <span className="font-medium">{end}</span> de{" "}
-        <span className="font-medium">{totalItems}</span> tópicos
+        <span className="font-medium">{totalItems}</span> {itemLabel}
       </p>
       <div className="flex flex-wrap items-center justify-center gap-2">
         {prevUrl ? (
