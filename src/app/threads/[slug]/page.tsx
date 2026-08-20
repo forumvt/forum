@@ -7,6 +7,7 @@ import { roleLabel } from "@/lib/permissions";
 import { resolveActor } from "@/lib/session-actor";
 import { formatMemberSince } from "@/lib/utils";
 import * as likeRepo from "@/repositories/like.repository";
+import * as ignoreService from "@/services/ignore.service";
 import * as postService from "@/services/post.service";
 import * as threadService from "@/services/thread.service";
 import * as userService from "@/services/user.service";
@@ -64,17 +65,19 @@ export default async function ThreadPage({
   const actor = session?.user ? await resolveActor(session.user) : null;
   const sessionUserId = session?.user?.id ?? null;
 
-  const [threadLikes, postLikes, identities] = await Promise.all([
-    likeRepo.findThreadLikeStats(thread.id, sessionUserId),
-    likeRepo.findPostLikeStats(
-      dbPosts.map((post) => post.id),
-      sessionUserId,
-    ),
-    userService.getIdentityMap([
-      thread.userId,
-      ...dbPosts.map((post) => post.userId),
-    ]),
-  ]);
+  const [threadLikes, postLikes, identities, ignoredUserIds] =
+    await Promise.all([
+      likeRepo.findThreadLikeStats(thread.id, sessionUserId),
+      likeRepo.findPostLikeStats(
+        dbPosts.map((post) => post.id),
+        sessionUserId,
+      ),
+      userService.getIdentityMap([
+        thread.userId,
+        ...dbPosts.map((post) => post.userId),
+      ]),
+      ignoreService.getIgnoredUserIdSet(sessionUserId),
+    ]);
 
   function identityFields(identity: UserIdentity | undefined) {
     return {
@@ -101,6 +104,7 @@ export default async function ThreadPage({
     userId: thread.userId,
     createdAt: thread.createdAt.toISOString(),
     updatedAt: thread.updatedAt.toISOString(),
+    isIgnored: ignoredUserIds.has(thread.userId),
   };
 
   const displayPosts: Post[] = [
@@ -121,6 +125,7 @@ export default async function ThreadPage({
         userId: post.userId,
         createdAt: post.createdAt.toISOString(),
         updatedAt: post.updatedAt.toISOString(),
+        isIgnored: ignoredUserIds.has(post.userId),
       };
     }),
   ];

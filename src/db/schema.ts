@@ -20,7 +20,9 @@ export const userTable = pgTable("user", {
   emailVerified: boolean("email_verified")
     .$defaultFn(() => false)
     .notNull(),
-  image: text("image").$type<string | null>().default('https://www.subeiros.com/eris-apple.png'),
+  image: text("image")
+    .$type<string | null>()
+    .default("https://www.subeiros.com/eris-apple.png"),
   role: roleEnum("role").notNull().default("USER"),
   createdAt: timestamp("created_at")
     .$defaultFn(() => /* @__PURE__ */ new Date())
@@ -297,5 +299,24 @@ export const userSubscriptionTable = pgTable(
       t.subscriberUserId,
     ),
     targetIdx: index("user_subscription_target_idx").on(t.targetUserId),
+  }),
+);
+
+export const userIgnoreTable = pgTable(
+  "user_ignore",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ignorerUserId: text("ignorer_user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    targetUserId: text("target_user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    pairUnique: unique().on(t.ignorerUserId, t.targetUserId),
+    ignorerIdx: index("user_ignore_ignorer_idx").on(t.ignorerUserId),
+    targetIdx: index("user_ignore_target_idx").on(t.targetUserId),
   }),
 );

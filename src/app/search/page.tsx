@@ -5,6 +5,10 @@ import { Suspense } from "react";
 
 import { HighlightText } from "@/components/highlight-text";
 import { HomeSkeleton } from "@/components/home-skeleton";
+import {
+  IGNORED_THREAD_NOTICE,
+  IgnoredReveal,
+} from "@/components/ignored-reveal";
 import { RightRail } from "@/components/right-rail";
 import { SearchForm } from "@/components/search-form";
 import { ThreadTitleWithPreview } from "@/components/thread-title-with-preview";
@@ -77,7 +81,8 @@ async function SearchResults({
             Termo muito curto
           </h3>
           <p className="text-muted-foreground">
-            Digite pelo menos {MIN_SEARCH_QUERY_LENGTH} caracteres para pesquisar.
+            Digite pelo menos {MIN_SEARCH_QUERY_LENGTH} caracteres para
+            pesquisar.
           </p>
         </div>
         <aside className="w-full shrink-0 lg:w-80">
@@ -125,87 +130,92 @@ async function SearchResults({
         </p>
 
         {threads.map((thread) => (
-          <Card
+          <IgnoredReveal
             key={thread.id}
-            className="chaos-card bg-card transition-all duration-300 hover:shadow-lg"
+            ignored={thread.authorIgnored}
+            message={IGNORED_THREAD_NOTICE}
           >
-            <div className="p-4 sm:p-6">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                <div className="flex items-center gap-3 sm:flex-col sm:items-center">
-                  <UserAvatarLink
-                    userId={thread.userId}
-                    name={thread.userName}
-                    avatar={thread.userAvatar}
-                    className="h-10 w-10 sm:h-12 sm:w-12"
-                  />
-                  <div className="sm:hidden">
-                    <div className="text-muted-foreground flex items-center gap-1 text-xs">
-                      <User className="h-3 w-3" />
-                      <UserNameLink
-                        userId={thread.userId}
-                        name={thread.userName}
-                        className="font-medium text-foreground"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="mb-2">
-                    <ThreadTitleWithPreview
-                      title={thread.title}
-                      description={thread.description}
-                      slug={thread.slug}
-                      isUnread={thread.isUnread}
-                      highlightQuery={query}
+            <Card className="chaos-card bg-card transition-all duration-300 hover:shadow-lg">
+              <div className="p-4 sm:p-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                  <div className="flex items-center gap-3 sm:flex-col sm:items-center">
+                    <UserAvatarLink
+                      userId={thread.userId}
+                      name={thread.userName}
+                      avatar={thread.userAvatar}
+                      className="h-10 w-10 sm:h-12 sm:w-12"
                     />
+                    <div className="sm:hidden">
+                      <div className="text-muted-foreground flex items-center gap-1 text-xs">
+                        <User className="h-3 w-3" />
+                        <UserNameLink
+                          userId={thread.userId}
+                          name={thread.userName}
+                          className="font-medium text-foreground"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  {thread.snippet && (
-                    <p className="text-muted-foreground mb-2 line-clamp-2 text-sm">
-                      <HighlightText text={thread.snippet} query={query} />
-                    </p>
-                  )}
-                  <div className="text-muted-foreground flex flex-col gap-2 text-xs sm:flex-row sm:items-center sm:gap-3">
-                    {thread.forumSlug && thread.forumTitle && (
-                      <Link
-                        href={`/forums/${thread.forumSlug}` as never}
-                        className="hover:text-primary font-medium underline-offset-2 hover:underline"
-                      >
-                        {thread.forumTitle}
-                      </Link>
-                    )}
-                    <div className="hidden items-center gap-1 sm:flex">
-                      <User className="h-3 w-3" />
-                      <UserNameLink
-                        userId={thread.userId}
-                        name={thread.userName}
-                        className="font-medium text-foreground"
+
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-2">
+                      <ThreadTitleWithPreview
+                        title={thread.title}
+                        description={thread.description}
+                        slug={thread.slug}
+                        isUnread={thread.isUnread}
+                        highlightQuery={query}
                       />
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      <span>
-                        {new Date(thread.createdAt).toLocaleDateString("pt-BR")}
-                      </span>
+                    {thread.snippet && (
+                      <p className="text-muted-foreground mb-2 line-clamp-2 text-sm">
+                        <HighlightText text={thread.snippet} query={query} />
+                      </p>
+                    )}
+                    <div className="text-muted-foreground flex flex-col gap-2 text-xs sm:flex-row sm:items-center sm:gap-3">
+                      {thread.forumSlug && thread.forumTitle && (
+                        <Link
+                          href={`/forums/${thread.forumSlug}` as never}
+                          className="hover:text-primary font-medium underline-offset-2 hover:underline"
+                        >
+                          {thread.forumTitle}
+                        </Link>
+                      )}
+                      <div className="hidden items-center gap-1 sm:flex">
+                        <User className="h-3 w-3" />
+                        <UserNameLink
+                          userId={thread.userId}
+                          name={thread.userName}
+                          className="font-medium text-foreground"
+                        />
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        <span>
+                          {new Date(thread.createdAt).toLocaleDateString(
+                            "pt-BR",
+                          )}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center justify-between gap-4 text-sm sm:flex-col sm:gap-6">
-                  <div className="text-center">
-                    <div className="text-muted-foreground mb-1 flex items-center gap-1">
-                      <MessageSquare className="h-4 w-4" />
-                      <span className="hidden sm:inline">Respostas:</span>
-                      <span className="sm:hidden">Resp:</span>
-                    </div>
-                    <div className="text-foreground text-lg font-bold">
-                      {thread.postsCount}
+                  <div className="flex items-center justify-between gap-4 text-sm sm:flex-col sm:gap-6">
+                    <div className="text-center">
+                      <div className="text-muted-foreground mb-1 flex items-center gap-1">
+                        <MessageSquare className="h-4 w-4" />
+                        <span className="hidden sm:inline">Respostas:</span>
+                        <span className="sm:hidden">Resp:</span>
+                      </div>
+                      <div className="text-foreground text-lg font-bold">
+                        {thread.postsCount}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+          </IgnoredReveal>
         ))}
 
         <ThreadsPagination

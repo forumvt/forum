@@ -3,6 +3,10 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
+import {
+  IGNORED_THREAD_NOTICE,
+  IgnoredReveal,
+} from "@/components/ignored-reveal";
 import { ThreadTitleWithPreview } from "@/components/thread-title-with-preview";
 import { ThreadsPagination } from "@/components/threads-pagination";
 import { Card } from "@/components/ui/card";
@@ -58,8 +62,8 @@ async function SubsFeed({
         <h2 className="mb-3 text-lg font-semibold">Quem você sub</h2>
         {subscriptions.users.length === 0 ? (
           <p className="text-muted-foreground text-sm">
-            Passe o mouse no avatar de alguém e clique em Sub. Os tópicos
-            dessa pessoa aparecem aqui.
+            Passe o mouse no avatar de alguém e clique em Sub. Os tópicos dessa
+            pessoa aparecem aqui.
           </p>
         ) : (
           <div className="flex flex-wrap gap-3">
@@ -102,67 +106,71 @@ async function SubsFeed({
         ) : (
           <div className="space-y-4">
             {threads.map((thread) => (
-              <Card
+              <IgnoredReveal
                 key={thread.id}
-                className="chaos-card bg-card transition-all duration-300 hover:shadow-lg"
+                ignored={thread.authorIgnored}
+                message={IGNORED_THREAD_NOTICE}
               >
-                <div className="p-4 sm:p-6">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                    <div className="flex items-center gap-3 sm:flex-col sm:items-center">
-                      <UserAvatarLink
-                        userId={thread.userId}
-                        name={thread.userName}
-                        avatar={thread.userAvatar}
-                        className="h-10 w-10 sm:h-12 sm:w-12"
-                      />
-                      <div className="sm:hidden">
-                        <div className="text-muted-foreground flex items-center gap-1 text-xs">
-                          <User className="h-3 w-3" />
-                          <UserNameLink
-                            userId={thread.userId}
-                            name={thread.userName}
-                            className="font-medium text-foreground"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-2">
-                        <ThreadTitleWithPreview
-                          title={thread.title}
-                          description={thread.description}
-                          slug={thread.slug}
-                          isUnread={thread.isUnread}
+                <Card className="chaos-card bg-card transition-all duration-300 hover:shadow-lg">
+                  <div className="p-4 sm:p-6">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                      <div className="flex items-center gap-3 sm:flex-col sm:items-center">
+                        <UserAvatarLink
+                          userId={thread.userId}
+                          name={thread.userName}
+                          avatar={thread.userAvatar}
+                          className="h-10 w-10 sm:h-12 sm:w-12"
                         />
+                        <div className="sm:hidden">
+                          <div className="text-muted-foreground flex items-center gap-1 text-xs">
+                            <User className="h-3 w-3" />
+                            <UserNameLink
+                              userId={thread.userId}
+                              name={thread.userName}
+                              className="font-medium text-foreground"
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-                        <div className="hidden items-center gap-1 sm:flex">
-                          <User className="h-3 w-3" />
-                          <UserNameLink
-                            userId={thread.userId}
-                            name={thread.userName}
-                            className="font-medium text-foreground"
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-2">
+                          <ThreadTitleWithPreview
+                            title={thread.title}
+                            description={thread.description}
+                            slug={thread.slug}
+                            isUnread={thread.isUnread}
                           />
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          <span>
-                            {new Date(thread.createdAt).toLocaleDateString(
-                              "pt-BR",
-                            )}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <MessageSquare className="h-3 w-3" />
-                          <span>
-                            {thread.postsCount.toLocaleString("pt-BR")} respostas
-                          </span>
+                        <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                          <div className="hidden items-center gap-1 sm:flex">
+                            <User className="h-3 w-3" />
+                            <UserNameLink
+                              userId={thread.userId}
+                              name={thread.userName}
+                              className="font-medium text-foreground"
+                            />
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            <span>
+                              {new Date(thread.createdAt).toLocaleDateString(
+                                "pt-BR",
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <MessageSquare className="h-3 w-3" />
+                            <span>
+                              {thread.postsCount.toLocaleString("pt-BR")}{" "}
+                              respostas
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </Card>
+                </Card>
+              </IgnoredReveal>
             ))}
             <ThreadsPagination
               currentPage={currentPage}

@@ -2,6 +2,7 @@ import { roleLabel, toUserRole } from "@/lib/permissions";
 import { excerptStart } from "@/lib/search";
 import * as likeRepo from "@/repositories/like.repository";
 import * as userRepo from "@/repositories/user.repository";
+import * as ignoreService from "@/services/ignore.service";
 import * as subscriptionService from "@/services/subscription.service";
 import type {
   UserIdentity,
@@ -49,12 +50,16 @@ export async function getProfile(
   const user = await userRepo.findPublicById(userId);
   if (!user) return null;
 
-  const [threadCounts, replyCounts, likeCounts, subStats] = await Promise.all([
-    userRepo.countThreadsByUserIds([userId]),
-    userRepo.countRepliesByUserIds([userId]),
-    likeRepo.findReceivedLikeCounts([userId]),
-    subscriptionService.getSubscriptionStats(userId, viewerId),
-  ]);
+  const [threadCounts, replyCounts, likeCounts, subStats, ignoredByMe] =
+    await Promise.all([
+      userRepo.countThreadsByUserIds([userId]),
+      userRepo.countRepliesByUserIds([userId]),
+      likeRepo.findReceivedLikeCounts([userId]),
+      subscriptionService.getSubscriptionStats(userId, viewerId),
+      viewerId && viewerId !== userId
+        ? ignoreService.isIgnoredBy(viewerId, userId)
+        : Promise.resolve(false),
+    ]);
 
   const threadsCount = threadCounts.get(userId) ?? 0;
   const repliesCount = replyCounts.get(userId) ?? 0;
@@ -72,6 +77,7 @@ export async function getProfile(
     subscriberCount: subStats.subscriberCount,
     subscriptionCount: subStats.subscriptionCount,
     subscribedByMe: subStats.subscribedByMe,
+    ignoredByMe,
   };
 }
 
@@ -93,6 +99,7 @@ export async function getPreview(
     subscriberCount: profile.subscriberCount,
     subscriptionCount: profile.subscriptionCount,
     subscribedByMe: profile.subscribedByMe,
+    ignoredByMe: profile.ignoredByMe,
   };
 }
 

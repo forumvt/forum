@@ -16,6 +16,7 @@ export interface UserProfile extends UserIdentity {
   subscriberCount: number;
   subscriptionCount: number;
   subscribedByMe: boolean;
+  ignoredByMe: boolean;
 }
 
 export interface UserThreadItem {
@@ -58,6 +59,7 @@ export interface UserPreview {
   subscriberCount: number;
   subscriptionCount: number;
   subscribedByMe: boolean;
+  ignoredByMe: boolean;
 }
 
 export interface SubscribedUser {
@@ -65,4 +67,11 @@ export interface SubscribedUser {
   name: string;
   avatar: string | null;
   subscribedAt: Date;
+}
+
+export interface IgnoredUser {
+  id: string;
+  name: string;
+  avatar: string | null;
+  ignoredAt: Date;
 }

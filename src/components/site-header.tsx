@@ -1,6 +1,13 @@
 "use client";
 
-import { LogOutIcon, Search, SettingsIcon, UserIcon, Users } from "lucide-react";
+import {
+  LogOutIcon,
+  Search,
+  SettingsIcon,
+  UserIcon,
+  Users,
+  UserX,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Suspense, useSyncExternalStore } from "react";
@@ -150,6 +157,12 @@ export function SiteHeader() {
                     >
                       <Users />
                       Meus subs
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => router.push("/ignorados" as never)}
+                    >
+                      <UserX />
+                      Ignorados
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push("/settings")}>
                       <SettingsIcon />

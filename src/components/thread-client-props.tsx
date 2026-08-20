@@ -4,6 +4,11 @@ import { Clock, User } from "lucide-react";
 import Link from "next/link";
 import { useRef } from "react";
 
+import {
+  IGNORED_REPLY_NOTICE,
+  IGNORED_THREAD_NOTICE,
+  IgnoredReveal,
+} from "@/components/ignored-reveal";
 import { PostCard } from "@/components/post-card";
 import { ReplyForm, ReplyFormHandle } from "@/components/reply-form";
 import {
@@ -109,15 +114,24 @@ export function ThreadClient({
 
       <div className="space-y-6">
         {posts.map((post) => (
-          <PostCard
+          <IgnoredReveal
             key={post.id}
-            post={post}
-            canEdit={canEditPost(actorId, actorRole, post.userId)}
-            threadSlug={threadSlug}
-            onReply={(user, content, replyUserId) =>
-              replyFormRef.current?.replyTo(user, content, replyUserId)
+            ignored={post.isIgnored}
+            message={
+              post.isOriginalPoster
+                ? IGNORED_THREAD_NOTICE
+                : IGNORED_REPLY_NOTICE
             }
-          />
+          >
+            <PostCard
+              post={post}
+              canEdit={canEditPost(actorId, actorRole, post.userId)}
+              threadSlug={threadSlug}
+              onReply={(user, content, replyUserId) =>
+                replyFormRef.current?.replyTo(user, content, replyUserId)
+              }
+            />
+          </IgnoredReveal>
         ))}
       </div>
 

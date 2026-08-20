@@ -135,7 +135,10 @@ async function ProfileContent({
     Math.max(1, parseInt(query.per ?? String(DEFAULT_PER), 10) || DEFAULT_PER),
   );
 
-  const profile = await userService.getProfile(userId, session?.user?.id ?? null);
+  const profile = await userService.getProfile(
+    userId,
+    session?.user?.id ?? null,
+  );
   if (!profile) notFound();
 
   const isOwnProfile = session?.user?.id === profile.id;
@@ -165,8 +168,7 @@ async function ProfileContent({
       : null;
 
   const basePath = `/users/${encodeURIComponent(profile.id)}`;
-  const queryParams =
-    tab === "topics" ? undefined : { tab };
+  const queryParams = tab === "topics" ? undefined : { tab };
 
   return (
     <>
@@ -247,6 +249,7 @@ async function ProfileContent({
               userId={profile.id}
               isOwnProfile={isOwnProfile}
               initialSubscribed={profile.subscribedByMe}
+              initialIgnored={profile.ignoredByMe}
               subscriberCount={profile.subscriberCount}
               subscriptionCount={profile.subscriptionCount}
             />

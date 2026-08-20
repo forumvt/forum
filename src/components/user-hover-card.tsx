@@ -12,18 +12,14 @@ import {
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
+import { IgnoreButton } from "@/components/ignore-button";
 import { SubButton } from "@/components/sub-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { userProfilePath } from "@/lib/app-url";
 import { authClient } from "@/lib/auth-client";
 import { patchUserPreview, userPreviewCache } from "@/lib/user-preview-cache";
-import {
-  cn,
-  displayUserName,
-  formatJoinedOn,
-  userInitials,
-} from "@/lib/utils";
+import { cn, displayUserName, formatJoinedOn, userInitials } from "@/lib/utils";
 import type { UserPreview } from "@/types/user";
 const OPEN_DELAY_MS = 280;
 const CLOSE_DELAY_MS = 160;
@@ -255,7 +251,7 @@ export function UserHoverCard({
                 {!isOwnProfile && (
                   <div className="grid grid-cols-[1fr_1fr_1.45fr] gap-1.5 p-2.5">
                     <SubButton
-                      key={String(preview.subscribedByMe)}
+                      key={`sub-${String(preview.subscribedByMe)}`}
                       targetUserId={preview.id}
                       initialSubscribed={preview.subscribedByMe}
                       onToggle={(subscribed, subscriberCount) => {
@@ -271,15 +267,19 @@ export function UserHoverCard({
                         });
                       }}
                     />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      className="h-8 px-2 text-xs"
-                      onClick={() => comingSoon("Ignorar", loggedIn)}
-                    >
-                      Ignorar
-                    </Button>
+                    <IgnoreButton
+                      key={`ignore-${String(preview.ignoredByMe)}`}
+                      targetUserId={preview.id}
+                      initialIgnored={preview.ignoredByMe}
+                      onToggle={(ignored) => {
+                        setPreview((current) => {
+                          if (!current) return current;
+                          const next = { ...current, ignoredByMe: ignored };
+                          patchUserPreview(preview.id, next);
+                          return next;
+                        });
+                      }}
+                    />
                     <Button
                       type="button"
                       variant="secondary"

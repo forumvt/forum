@@ -29,6 +29,9 @@ export async function RightRail() {
                 <Link href={"/subs" as never} className={filterLinkClass}>
                   Meus subs
                 </Link>
+                <Link href={"/ignorados" as never} className={filterLinkClass}>
+                  Ignorados
+                </Link>
                 <Link
                   href="/?filter=answered-by-me"
                   className={filterLinkClass}
@@ -82,21 +85,27 @@ export async function RightRail() {
                 <MessageSquare className="h-4 w-4" />
                 Foruns:
               </dt>
-              <dd className="font-bold text-foreground">{totals.forums.toLocaleString("pt-BR")}</dd>
+              <dd className="font-bold text-foreground">
+                {totals.forums.toLocaleString("pt-BR")}
+              </dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-muted-foreground flex items-center gap-1">
                 <MessageSquare className="h-4 w-4" />
                 Topicos:
               </dt>
-              <dd className="font-bold text-foreground">{totals.topics.toLocaleString("pt-BR")}</dd>
+              <dd className="font-bold text-foreground">
+                {totals.topics.toLocaleString("pt-BR")}
+              </dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-muted-foreground flex items-center gap-1">
                 <Users className="h-4 w-4" />
                 Posts:
               </dt>
-              <dd className="font-bold text-foreground">{totals.posts.toLocaleString("pt-BR")}</dd>
+              <dd className="font-bold text-foreground">
+                {totals.posts.toLocaleString("pt-BR")}
+              </dd>
             </div>
           </dl>
         </CardContent>

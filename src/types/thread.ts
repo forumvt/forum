@@ -17,6 +17,8 @@ export interface ThreadListItem {
   lastPostUserId: string | null;
   lastPostUserName: string | null;
   lastPostUserAvatar: string | null;
+  authorIgnored?: boolean;
+  lastPostIgnored?: boolean;
 }
 
 export interface ThreadSearchItem extends ThreadListItem {

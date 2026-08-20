@@ -5,6 +5,7 @@ import {
   normalizeSearchQuery,
 } from "@/lib/search";
 import * as threadRepo from "@/repositories/thread.repository";
+import * as ignoreService from "@/services/ignore.service";
 import * as notificationService from "@/services/notification.service";
 import * as subscriptionService from "@/services/subscription.service";
 import type { FilterType } from "@/types/filters";
@@ -67,7 +68,12 @@ export async function listThreads(
   });
   const totalPages = Math.ceil(totalCount / per) || 1;
   const currentPage = Math.min(Math.max(1, page), totalPages);
-  return { threads, totalCount, totalPages, currentPage };
+  return {
+    threads: await ignoreService.applyIgnoreFlags(threads, sessionUserId),
+    totalCount,
+    totalPages,
+    currentPage,
+  };
 }
 
 export interface SearchThreadsParams {
@@ -109,16 +115,18 @@ export async function searchThreads(
   const totalPages = Math.ceil(totalCount / params.per) || 1;
   const currentPage = Math.min(Math.max(1, params.page), totalPages);
 
+  const mapped = threads.map((thread) => {
+    const { matchedPostContent, ...rest } = thread;
+    const source = matchedPostContent || rest.description;
+    return {
+      ...rest,
+      snippet: excerptAroundMatch(source, query),
+    };
+  });
+
   return {
     query,
-    threads: threads.map((thread) => {
-      const { matchedPostContent, ...rest } = thread;
-      const source = matchedPostContent || rest.description;
-      return {
-        ...rest,
-        snippet: excerptAroundMatch(source, query),
-      };
-    }),
+    threads: await ignoreService.applyIgnoreFlags(mapped, params.sessionUserId),
     totalCount,
     totalPages,
     currentPage,

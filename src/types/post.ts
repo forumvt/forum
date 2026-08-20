@@ -15,4 +15,5 @@ export interface Post {
   userId: string;
   createdAt: string;
   updatedAt: string;
+  isIgnored?: boolean;
 }

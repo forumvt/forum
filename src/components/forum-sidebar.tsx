@@ -11,6 +11,7 @@ import {
   Settings,
   TvIcon,
   Users,
+  UserX,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -46,6 +47,7 @@ const mainNav = [
     url: "/forums/vale-tudo",
   },
   { title: "Meus subs", icon: Users, url: "/subs" },
+  { title: "Ignorados", icon: UserX, url: "/ignorados" },
   { title: "Em Alta", icon: Flame, url: "#" },
 ];
 
@@ -88,6 +90,11 @@ export function ForumSidebar(props: React.ComponentProps<typeof Sidebar>) {
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton asChild>
                           <Link href={"/subs" as never}>Meus subs</Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild>
+                          <Link href={"/ignorados" as never}>Ignorados</Link>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>

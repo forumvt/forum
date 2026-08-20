@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { IgnoreButton } from "@/components/ignore-button";
 import { SubButton } from "@/components/sub-button";
 import { userProfilePath } from "@/lib/app-url";
 
@@ -10,12 +11,14 @@ export function ProfileSubscribePanel({
   userId,
   isOwnProfile,
   initialSubscribed,
+  initialIgnored,
   subscriberCount,
   subscriptionCount,
 }: {
   userId: string;
   isOwnProfile: boolean;
   initialSubscribed: boolean;
+  initialIgnored: boolean;
   subscriberCount: number;
   subscriptionCount: number;
 }) {
@@ -25,15 +28,23 @@ export function ProfileSubscribePanel({
   return (
     <div className="mt-4 flex flex-wrap items-center gap-3">
       {!isOwnProfile && (
-        <SubButton
-          targetUserId={userId}
-          initialSubscribed={initialSubscribed}
-          size="default"
-          className="h-9 px-4 text-sm"
-          onToggle={(_subscribed, subscriberCountNext) => {
-            setSubs(subscriberCountNext);
-          }}
-        />
+        <>
+          <SubButton
+            targetUserId={userId}
+            initialSubscribed={initialSubscribed}
+            size="default"
+            className="h-9 px-4 text-sm"
+            onToggle={(_subscribed, subscriberCountNext) => {
+              setSubs(subscriberCountNext);
+            }}
+          />
+          <IgnoreButton
+            targetUserId={userId}
+            initialIgnored={initialIgnored}
+            size="default"
+            className="h-9 px-4 text-sm"
+          />
+        </>
       )}
       <Link
         href={`${base}?tab=subscribers` as never}

@@ -15,6 +15,7 @@ export type {
   ThreadSearchItem,
 } from "./thread";
 export type {
+  IgnoredUser,
   SubscribedUser,
   UserIdentity,
   UserPostItem,
