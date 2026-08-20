@@ -72,14 +72,20 @@ async function HomeContent({
           <div className="bg-muted/50 border-border w-full flex-1 rounded-lg border px-4 py-12 text-center">
             <MessageSquare className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
             <h3 className="text-foreground mb-2 text-xl font-bold">
-              Ainda não há tópicos
+              {filter === "from-subs"
+                ? "Nada dos seus subs"
+                : "Ainda não há tópicos"}
             </h3>
             <p className="text-muted-foreground mb-4">
-              Este fórum aguarda seu primeiro tópico de discussão!
+              {filter === "from-subs"
+                ? "Dê sub em alguém para ver os tópicos deles aqui."
+                : "Este fórum aguarda seu primeiro tópico de discussão!"}
             </p>
-            <p className="text-muted-foreground text-sm">
-              Seja o primeiro a iniciar uma discussão.
-            </p>
+            {filter !== "from-subs" && (
+              <p className="text-muted-foreground text-sm">
+                Seja o primeiro a iniciar uma discussão.
+              </p>
+            )}
           </div>
         ) : (
           <div className="min-w-0 flex-1 space-y-4">

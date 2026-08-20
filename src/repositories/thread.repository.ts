@@ -54,12 +54,14 @@ export interface FindManyPaginatedOptions {
   sessionUserId: string | null;
   page: number;
   per: number;
+  subscribedUserIds?: string[];
 }
 
 export async function findManyPaginated(
   options: FindManyPaginatedOptions,
 ): Promise<{ threads: ThreadListItem[]; totalCount: number }> {
-  const { forumId, filter, sessionUserId, page, per } = options;
+  const { forumId, filter, sessionUserId, page, per, subscribedUserIds } =
+    options;
   const effectiveUserId = sessionUserId ?? NO_SESSION_USER_ID;
 
   const forumWhere = forumId ? eq(threadTable.forumId, forumId) : undefined;
@@ -100,6 +102,19 @@ export async function findManyPaginated(
       .where(viewedWhere);
     const [r] = await viewedQuery;
     totalCount = r?.totalCount ?? 0;
+  } else if (filter === "from-subs") {
+    if (!sessionUserId || !subscribedUserIds || subscribedUserIds.length === 0) {
+      totalCount = 0;
+    } else {
+      const subWhere = forumWhere
+        ? and(forumWhere, inArray(threadTable.userId, subscribedUserIds))
+        : inArray(threadTable.userId, subscribedUserIds);
+      const [r] = await db
+        .select({ totalCount: sql<number>`count(*)::int` })
+        .from(threadTable)
+        .where(subWhere);
+      totalCount = r?.totalCount ?? 0;
+    }
   } else {
     const [r] = forumWhere
       ? await db
@@ -138,7 +153,13 @@ export async function findManyPaginated(
         ? forumWhere
           ? and(forumWhere, isNotNull(threadReadTable.lastReadAt))
           : isNotNull(threadReadTable.lastReadAt)
-        : (forumWhere ?? undefined);
+        : filter === "from-subs"
+          ? !sessionUserId || !subscribedUserIds || subscribedUserIds.length === 0
+            ? sql`1 = 0`
+            : forumWhere
+              ? and(forumWhere, inArray(threadTable.userId, subscribedUserIds))
+              : inArray(threadTable.userId, subscribedUserIds)
+          : (forumWhere ?? undefined);
 
   const baseQuery = db
     .select({

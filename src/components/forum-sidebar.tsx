@@ -10,6 +10,7 @@ import {
   Search,
   Settings,
   TvIcon,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -44,6 +45,7 @@ const mainNav = [
     icon: MessageSquareText,
     url: "/forums/vale-tudo",
   },
+  { title: "Meus subs", icon: Users, url: "/subs" },
   { title: "Em Alta", icon: Flame, url: "#" },
 ];
 
@@ -83,6 +85,11 @@ export function ForumSidebar(props: React.ComponentProps<typeof Sidebar>) {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild>
+                          <Link href={"/subs" as never}>Meus subs</Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton asChild>
                           <Link href="/?filter=answered-by-me">

@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { ProfileSkeleton } from "@/components/profile-skeleton";
+import { ProfileSubscribePanel } from "@/components/profile-subscribe-panel";
+import { SubscribedUserList } from "@/components/subscribed-user-list";
 import { ThreadTitleWithPreview } from "@/components/thread-title-with-preview";
 import { ThreadsPagination } from "@/components/threads-pagination";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +24,7 @@ import { UserAvatarLink } from "@/components/user-link";
 import { auth } from "@/lib/auth";
 import { roleLabel } from "@/lib/permissions";
 import { cn, formatMemberSince } from "@/lib/utils";
+import * as subscriptionService from "@/services/subscription.service";
 import * as userService from "@/services/user.service";
 import type { UserProfileTab } from "@/types/user";
 
@@ -35,7 +38,14 @@ type ProfileSearchParams = Promise<{
 }>;
 
 function parseTab(value?: string): UserProfileTab {
-  return value === "posts" ? "posts" : "topics";
+  if (
+    value === "posts" ||
+    value === "subscribers" ||
+    value === "subscriptions"
+  ) {
+    return value;
+  }
+  return "topics";
 }
 
 export async function generateMetadata({
@@ -56,15 +66,21 @@ function ProfileTabs({
   userId,
   threadsCount,
   repliesCount,
+  subscriberCount,
+  subscriptionCount,
 }: {
   active: UserProfileTab;
   userId: string;
   threadsCount: number;
   repliesCount: number;
+  subscriberCount: number;
+  subscriptionCount: number;
 }) {
   const tabs: { value: UserProfileTab; label: string; count: number }[] = [
     { value: "topics", label: "Tópicos", count: threadsCount },
     { value: "posts", label: "Mensagens", count: repliesCount },
+    { value: "subscribers", label: "Subs", count: subscriberCount },
+    { value: "subscriptions", label: "Subscritos", count: subscriptionCount },
   ];
 
   return (
@@ -74,7 +90,7 @@ function ProfileTabs({
         const href =
           tab.value === "topics"
             ? `/users/${encodeURIComponent(userId)}`
-            : `/users/${encodeURIComponent(userId)}?tab=posts`;
+            : `/users/${encodeURIComponent(userId)}?tab=${tab.value}`;
 
         return (
           <Link
@@ -119,7 +135,7 @@ async function ProfileContent({
     Math.max(1, parseInt(query.per ?? String(DEFAULT_PER), 10) || DEFAULT_PER),
   );
 
-  const profile = await userService.getProfile(userId);
+  const profile = await userService.getProfile(userId, session?.user?.id ?? null);
   if (!profile) notFound();
 
   const isOwnProfile = session?.user?.id === profile.id;
@@ -131,9 +147,26 @@ async function ProfileContent({
     tab === "posts"
       ? await userService.listUserPosts({ userId: profile.id, page, per })
       : null;
+  const subscribersResult =
+    tab === "subscribers"
+      ? await subscriptionService.listSubscribers({
+          userId: profile.id,
+          page,
+          per,
+        })
+      : null;
+  const subscriptionsResult =
+    tab === "subscriptions"
+      ? await subscriptionService.listSubscriptions({
+          userId: profile.id,
+          page,
+          per,
+        })
+      : null;
 
   const basePath = `/users/${encodeURIComponent(profile.id)}`;
-  const queryParams = tab === "posts" ? { tab: "posts" } : undefined;
+  const queryParams =
+    tab === "topics" ? undefined : { tab };
 
   return (
     <>
@@ -209,6 +242,14 @@ async function ProfileContent({
                 </dd>
               </div>
             </dl>
+
+            <ProfileSubscribePanel
+              userId={profile.id}
+              isOwnProfile={isOwnProfile}
+              initialSubscribed={profile.subscribedByMe}
+              subscriberCount={profile.subscriberCount}
+              subscriptionCount={profile.subscriptionCount}
+            />
           </div>
         </div>
       </Card>
@@ -218,6 +259,8 @@ async function ProfileContent({
         userId={profile.id}
         threadsCount={profile.threadsCount}
         repliesCount={profile.repliesCount}
+        subscriberCount={profile.subscriberCount}
+        subscriptionCount={profile.subscriptionCount}
       />
 
       {threadsResult ? (
@@ -343,6 +386,51 @@ async function ProfileContent({
             />
           </div>
         )
+      ) : null}
+      {subscribersResult ? (
+        <div className="space-y-4">
+          <SubscribedUserList
+            users={subscribersResult.users}
+            emptyTitle="Nenhum sub ainda"
+            emptyDescription={
+              isOwnProfile
+                ? "Ninguém deu sub em você ainda."
+                : "Ninguém deu sub neste usuário ainda."
+            }
+          />
+          <ThreadsPagination
+            currentPage={subscribersResult.currentPage}
+            totalPages={subscribersResult.totalPages}
+            totalItems={subscribersResult.totalCount}
+            per={per}
+            basePath={basePath}
+            queryParams={queryParams}
+            itemLabel="subs"
+          />
+        </div>
+      ) : null}
+
+      {subscriptionsResult ? (
+        <div className="space-y-4">
+          <SubscribedUserList
+            users={subscriptionsResult.users}
+            emptyTitle="Nenhum subscrito"
+            emptyDescription={
+              isOwnProfile
+                ? "Você ainda não deu sub em ninguém."
+                : "Este usuário ainda não deu sub em ninguém."
+            }
+          />
+          <ThreadsPagination
+            currentPage={subscriptionsResult.currentPage}
+            totalPages={subscriptionsResult.totalPages}
+            totalItems={subscriptionsResult.totalCount}
+            per={per}
+            basePath={basePath}
+            queryParams={queryParams}
+            itemLabel="subscritos"
+          />
+        </div>
       ) : null}
     </>
   );

@@ -5,6 +5,7 @@ import type { FilterType } from "@/types/filters";
 
 const FILTERS: { value: FilterType; label: string; authOnly?: boolean }[] = [
   { value: "all", label: "Todos" },
+  { value: "from-subs", label: "Meus subs", authOnly: true },
   { value: "answered-by-me", label: "Respondidos por mim", authOnly: true },
   { value: "viewed-by-me", label: "Visualizadas por mim", authOnly: true },
   { value: "unanswered", label: "Sem respostas" },

@@ -26,6 +26,9 @@ export async function RightRail() {
             </Link>
             {session?.user && (
               <>
+                <Link href={"/subs" as never} className={filterLinkClass}>
+                  Meus subs
+                </Link>
                 <Link
                   href="/?filter=answered-by-me"
                   className={filterLinkClass}

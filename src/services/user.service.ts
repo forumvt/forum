@@ -2,6 +2,7 @@ import { roleLabel, toUserRole } from "@/lib/permissions";
 import { excerptStart } from "@/lib/search";
 import * as likeRepo from "@/repositories/like.repository";
 import * as userRepo from "@/repositories/user.repository";
+import * as subscriptionService from "@/services/subscription.service";
 import type {
   UserIdentity,
   UserPostItem,
@@ -41,14 +42,18 @@ export async function getIdentityMap(
   return identities;
 }
 
-export async function getProfile(userId: string): Promise<UserProfile | null> {
+export async function getProfile(
+  userId: string,
+  viewerId?: string | null,
+): Promise<UserProfile | null> {
   const user = await userRepo.findPublicById(userId);
   if (!user) return null;
 
-  const [threadCounts, replyCounts, likeCounts] = await Promise.all([
+  const [threadCounts, replyCounts, likeCounts, subStats] = await Promise.all([
     userRepo.countThreadsByUserIds([userId]),
     userRepo.countRepliesByUserIds([userId]),
     likeRepo.findReceivedLikeCounts([userId]),
+    subscriptionService.getSubscriptionStats(userId, viewerId),
   ]);
 
   const threadsCount = threadCounts.get(userId) ?? 0;
@@ -64,11 +69,17 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
     likesReceived: likeCounts.get(userId) ?? 0,
     threadsCount,
     repliesCount,
+    subscriberCount: subStats.subscriberCount,
+    subscriptionCount: subStats.subscriptionCount,
+    subscribedByMe: subStats.subscribedByMe,
   };
 }
 
-export async function getPreview(userId: string): Promise<UserPreview | null> {
-  const profile = await getProfile(userId);
+export async function getPreview(
+  userId: string,
+  viewerId?: string | null,
+): Promise<UserPreview | null> {
+  const profile = await getProfile(userId, viewerId);
   if (!profile) return null;
   return {
     id: profile.id,
@@ -79,6 +90,9 @@ export async function getPreview(userId: string): Promise<UserPreview | null> {
     postsCount: profile.postsCount,
     likesReceived: profile.likesReceived,
     threadsCount: profile.threadsCount,
+    subscriberCount: profile.subscriberCount,
+    subscriptionCount: profile.subscriptionCount,
+    subscribedByMe: profile.subscribedByMe,
   };
 }
 

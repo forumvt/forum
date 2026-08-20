@@ -13,6 +13,9 @@ export interface UserIdentity {
 export interface UserProfile extends UserIdentity {
   threadsCount: number;
   repliesCount: number;
+  subscriberCount: number;
+  subscriptionCount: number;
+  subscribedByMe: boolean;
 }
 
 export interface UserThreadItem {
@@ -37,7 +40,11 @@ export interface UserPostItem {
   forumSlug: string | null;
 }
 
-export type UserProfileTab = "topics" | "posts";
+export type UserProfileTab =
+  | "topics"
+  | "posts"
+  | "subscribers"
+  | "subscriptions";
 
 export interface UserPreview {
   id: string;
@@ -48,4 +55,14 @@ export interface UserPreview {
   postsCount: number;
   likesReceived: number;
   threadsCount: number;
+  subscriberCount: number;
+  subscriptionCount: number;
+  subscribedByMe: boolean;
+}
+
+export interface SubscribedUser {
+  id: string;
+  name: string;
+  avatar: string | null;
+  subscribedAt: Date;
 }

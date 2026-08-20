@@ -278,3 +278,24 @@ export const threadLikeTable = pgTable(
     userThreadUnique: unique().on(t.userId, t.threadId),
   }),
 );
+
+export const userSubscriptionTable = pgTable(
+  "user_subscription",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    subscriberUserId: text("subscriber_user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    targetUserId: text("target_user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    pairUnique: unique().on(t.subscriberUserId, t.targetUserId),
+    subscriberIdx: index("user_subscription_subscriber_idx").on(
+      t.subscriberUserId,
+    ),
+    targetIdx: index("user_subscription_target_idx").on(t.targetUserId),
+  }),
+);

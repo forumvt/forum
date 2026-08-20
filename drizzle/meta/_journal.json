@@ -15,6 +15,13 @@
       "when": 1774000000000,
       "tag": "0002_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776700000000,
+      "tag": "0003_user_subscriptions",
+      "breakpoints": true
     }
   ]
 }

@@ -6,6 +6,7 @@ import {
 } from "@/lib/search";
 import * as threadRepo from "@/repositories/thread.repository";
 import * as notificationService from "@/services/notification.service";
+import * as subscriptionService from "@/services/subscription.service";
 import type { FilterType } from "@/types/filters";
 import type {
   ThreadBySlug,
@@ -43,12 +44,26 @@ export async function listThreads(
   params: ListThreadsParams,
 ): Promise<ListThreadsResult> {
   const { forumId, filter, page, per, sessionUserId } = params;
+
+  let subscribedUserIds: string[] | undefined;
+  if (filter === "from-subs") {
+    if (!sessionUserId) {
+      return { threads: [], totalCount: 0, totalPages: 1, currentPage: 1 };
+    }
+    subscribedUserIds =
+      await subscriptionService.findTargetUserIds(sessionUserId);
+    if (subscribedUserIds.length === 0) {
+      return { threads: [], totalCount: 0, totalPages: 1, currentPage: 1 };
+    }
+  }
+
   const { threads, totalCount } = await threadRepo.findManyPaginated({
     forumId,
     filter,
     sessionUserId,
     page,
     per,
+    subscribedUserIds,
   });
   const totalPages = Math.ceil(totalCount / per) || 1;
   const currentPage = Math.min(Math.max(1, page), totalPages);
