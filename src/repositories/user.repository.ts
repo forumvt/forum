@@ -1,13 +1,9 @@
-import { desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 
 import { db } from "@/db";
-import {
-  forumTable,
-  postTable,
-  threadTable,
-  userTable,
-} from "@/db/schema";
+import { forumTable, postTable, threadTable, userTable } from "@/db/schema";
 import type { UserRole } from "@/lib/permissions";
+import type { AdminUserItem } from "@/types/moderation";
 import type { UserThreadItem } from "@/types/user";
 
 export interface PublicUserRow {
@@ -16,6 +12,8 @@ export interface PublicUserRow {
   avatar: string | null;
   role: UserRole;
   createdAt: Date;
+  bannedAt: Date | null;
+  banReason: string | null;
 }
 
 function uniqueIds(ids: string[]): string[] {
@@ -53,6 +51,8 @@ export async function findPublicById(
       avatar: userTable.image,
       role: userTable.role,
       createdAt: userTable.createdAt,
+      bannedAt: userTable.bannedAt,
+      banReason: userTable.banReason,
     })
     .from(userTable)
     .where(eq(userTable.id, userId))
@@ -73,6 +73,8 @@ export async function findPublicByIds(
       avatar: userTable.image,
       role: userTable.role,
       createdAt: userTable.createdAt,
+      bannedAt: userTable.bannedAt,
+      banReason: userTable.banReason,
     })
     .from(userTable)
     .where(inArray(userTable.id, ids));
@@ -134,7 +136,7 @@ export async function findThreadsByUserIdPaginated(
   const [countRow] = await db
     .select({ totalCount: sql<number>`count(*)::int` })
     .from(threadTable)
-    .where(eq(threadTable.userId, userId));
+    .where(and(eq(threadTable.userId, userId), isNull(threadTable.deletedAt)));
   const totalCount = countRow?.totalCount ?? 0;
 
   const threads = await db
@@ -152,7 +154,7 @@ export async function findThreadsByUserIdPaginated(
     .from(threadTable)
     .leftJoin(forumTable, eq(threadTable.forumId, forumTable.id))
     .leftJoin(postTable, eq(postTable.threadId, threadTable.id))
-    .where(eq(threadTable.userId, userId))
+    .where(and(eq(threadTable.userId, userId), isNull(threadTable.deletedAt)))
     .groupBy(
       threadTable.id,
       threadTable.title,
@@ -188,7 +190,7 @@ export async function findRepliesByUserIdPaginated(
   const [countRow] = await db
     .select({ totalCount: sql<number>`count(*)::int` })
     .from(postTable)
-    .where(eq(postTable.userId, userId));
+    .where(and(eq(postTable.userId, userId), isNull(postTable.deletedAt)));
   const totalCount = countRow?.totalCount ?? 0;
 
   const posts = await db
@@ -204,10 +206,95 @@ export async function findRepliesByUserIdPaginated(
     .from(postTable)
     .innerJoin(threadTable, eq(postTable.threadId, threadTable.id))
     .leftJoin(forumTable, eq(threadTable.forumId, forumTable.id))
-    .where(eq(postTable.userId, userId))
+    .where(
+      and(
+        eq(postTable.userId, userId),
+        isNull(postTable.deletedAt),
+        isNull(threadTable.deletedAt),
+      ),
+    )
     .orderBy(desc(postTable.createdAt))
     .limit(per)
     .offset((page - 1) * per);
 
   return { posts, totalCount };
+}
+
+export async function findBanById(
+  userId: string,
+): Promise<{ bannedAt: Date | null; banReason: string | null } | null> {
+  const [row] = await db
+    .select({
+      bannedAt: userTable.bannedAt,
+      banReason: userTable.banReason,
+    })
+    .from(userTable)
+    .where(eq(userTable.id, userId))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function setBan(
+  userId: string,
+  banned: boolean,
+  reason?: string | null,
+): Promise<void> {
+  await db
+    .update(userTable)
+    .set({
+      bannedAt: banned ? new Date() : null,
+      banReason: banned ? (reason ?? null) : null,
+      updatedAt: new Date(),
+    })
+    .where(eq(userTable.id, userId));
+}
+
+export async function setRole(userId: string, role: UserRole): Promise<void> {
+  await db
+    .update(userTable)
+    .set({ role, updatedAt: new Date() })
+    .where(eq(userTable.id, userId));
+}
+
+export async function findAdminPaginated(options: {
+  query?: string;
+  page: number;
+  per: number;
+}): Promise<{ users: AdminUserItem[]; totalCount: number }> {
+  const pattern = options.query?.trim()
+    ? `%${options.query.trim()}%`
+    : undefined;
+  const searchWhere = pattern
+    ? or(ilike(userTable.name, pattern), ilike(userTable.email, pattern))
+    : undefined;
+
+  const [countRow] = searchWhere
+    ? await db
+        .select({ totalCount: sql<number>`count(*)::int` })
+        .from(userTable)
+        .where(searchWhere)
+    : await db
+        .select({ totalCount: sql<number>`count(*)::int` })
+        .from(userTable);
+  const totalCount = countRow?.totalCount ?? 0;
+
+  const base = db
+    .select({
+      id: userTable.id,
+      name: userTable.name,
+      email: userTable.email,
+      avatar: userTable.image,
+      role: userTable.role,
+      createdAt: userTable.createdAt,
+      bannedAt: userTable.bannedAt,
+      banReason: userTable.banReason,
+    })
+    .from(userTable);
+
+  const users = await (searchWhere ? base.where(searchWhere) : base)
+    .orderBy(desc(userTable.createdAt))
+    .limit(options.per)
+    .offset((options.page - 1) * options.per);
+
+  return { users: users as AdminUserItem[], totalCount };
 }

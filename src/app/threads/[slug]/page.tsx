@@ -1,12 +1,15 @@
 import { headers } from "next/headers";
+import { notFound } from "next/navigation";
 
 import { PostsPagination } from "@/components/posts-pagination";
 import { ThreadClient } from "@/components/thread-client-props";
 import { auth } from "@/lib/auth";
-import { roleLabel } from "@/lib/permissions";
+import { DELETED_POST_NOTICE } from "@/lib/moderation-copy";
+import { isStaff, roleLabel } from "@/lib/permissions";
 import { resolveActor } from "@/lib/session-actor";
 import { formatMemberSince } from "@/lib/utils";
 import * as likeRepo from "@/repositories/like.repository";
+import * as forumService from "@/services/forum.service";
 import * as ignoreService from "@/services/ignore.service";
 import * as postService from "@/services/post.service";
 import * as threadService from "@/services/thread.service";
@@ -33,7 +36,12 @@ export default async function ThreadPage({
 
   const thread = await threadService.getThreadBySlug(slug);
   if (!thread) {
-    throw new Error("Thread não encontrada");
+    notFound();
+  }
+
+  const actor = session?.user ? await resolveActor(session.user) : null;
+  if (thread.deletedAt && !isStaff(actor?.role)) {
+    notFound();
   }
 
   if (session?.user?.id) {
@@ -62,10 +70,10 @@ export default async function ThreadPage({
 
   const { posts: dbPosts, totalCount, totalPages, currentPage } = postsResult;
 
-  const actor = session?.user ? await resolveActor(session.user) : null;
   const sessionUserId = session?.user?.id ?? null;
+  const staffViewer = isStaff(actor?.role);
 
-  const [threadLikes, postLikes, identities, ignoredUserIds] =
+  const [threadLikes, postLikes, identities, ignoredUserIds, forums] =
     await Promise.all([
       likeRepo.findThreadLikeStats(thread.id, sessionUserId),
       likeRepo.findPostLikeStats(
@@ -77,6 +85,7 @@ export default async function ThreadPage({
         ...dbPosts.map((post) => post.userId),
       ]),
       ignoreService.getIgnoredUserIdSet(sessionUserId),
+      forumService.listForums(),
     ]);
 
   function identityFields(identity: UserIdentity | undefined) {
@@ -105,6 +114,7 @@ export default async function ThreadPage({
     createdAt: thread.createdAt.toISOString(),
     updatedAt: thread.updatedAt.toISOString(),
     isIgnored: ignoredUserIds.has(thread.userId),
+    isDeleted: Boolean(thread.deletedAt),
   };
 
   const displayPosts: Post[] = [
@@ -117,7 +127,8 @@ export default async function ThreadPage({
         ...identityFields(identities.get(post.userId)),
         likeCount: likes.count,
         likedByMe: likes.likedByMe,
-        content: post.content,
+        content:
+          post.deletedAt && !staffViewer ? DELETED_POST_NOTICE : post.content,
         timestamp: new Date(post.createdAt).toLocaleString(),
         isOriginalPoster: post.userId === thread.userId,
         userAvatar: post.userAvatar,
@@ -126,6 +137,7 @@ export default async function ThreadPage({
         createdAt: post.createdAt.toISOString(),
         updatedAt: post.updatedAt.toISOString(),
         isIgnored: ignoredUserIds.has(post.userId),
+        isDeleted: Boolean(post.deletedAt),
       };
     }),
   ];
@@ -138,6 +150,12 @@ export default async function ThreadPage({
         threadSlug={slug}
         forumSlug={thread.forumSlug ?? slug}
         forumTitle={thread.forumTitle ?? "Fórum"}
+        forumId={thread.forumId}
+        forums={forums.map((forum) => ({
+          id: forum.id,
+          title: forum.title,
+          slug: forum.slug,
+        }))}
         userId={actor?.id || ""}
         isAuthenticated={!!session?.user}
         currentUserRole={actor?.role}
@@ -146,6 +164,9 @@ export default async function ThreadPage({
           userId: thread.userId,
           userName: thread.userName,
           createdAt: thread.createdAt,
+          isLocked: thread.isLocked,
+          isPinned: thread.isPinned,
+          deletedAt: thread.deletedAt,
         }}
       />
       <div className="mx-auto w-full max-w-7xl px-4 pb-10 sm:px-6">

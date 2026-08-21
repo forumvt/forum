@@ -4,6 +4,7 @@ import {
   LogOutIcon,
   Search,
   SettingsIcon,
+  Shield,
   UserIcon,
   Users,
   UserX,
@@ -18,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { userProfilePath } from "@/lib/app-url";
 import { authClient } from "@/lib/auth-client";
+import { getSessionRole, isStaff } from "@/lib/permissions";
 
 import { LoginDialog } from "./login-dialog";
 import { RegisterDialog } from "./register-dialog";
@@ -49,6 +51,7 @@ export function SiteHeader() {
   const router = useRouter();
 
   const user = session?.user;
+  const staff = isStaff(getSessionRole(user));
   const initials = `${user?.name?.split(" ")?.[0]?.[0] ?? ""}${
     user?.name?.split(" ")?.[1]?.[0] ?? ""
   }`;
@@ -164,6 +167,14 @@ export function SiteHeader() {
                       <UserX />
                       Ignorados
                     </DropdownMenuItem>
+                    {staff ? (
+                      <DropdownMenuItem
+                        onClick={() => router.push("/moderacao" as never)}
+                      >
+                        <Shield />
+                        Moderação
+                      </DropdownMenuItem>
+                    ) : null}
                     <DropdownMenuItem onClick={() => router.push("/settings")}>
                       <SettingsIcon />
                       Configurações

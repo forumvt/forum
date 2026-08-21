@@ -1,7 +1,7 @@
 import { toNextJsHandler } from "better-auth/next-js";
 
 import { auth } from "@/lib/auth";
-import { corsPreflightResponse,mergeCorsIntoResponse } from "@/lib/auth-cors";
+import { corsPreflightResponse, mergeCorsIntoResponse } from "@/lib/auth-cors";
 
 /** Evita cache em CDN sem Vary: Origin (respostas sem CORS corretos). */
 export const dynamic = "force-dynamic";

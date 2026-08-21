@@ -16,4 +16,5 @@ export interface Post {
   createdAt: string;
   updatedAt: string;
   isIgnored?: boolean;
+  isDeleted?: boolean;
 }

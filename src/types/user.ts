@@ -17,6 +17,8 @@ export interface UserProfile extends UserIdentity {
   subscriptionCount: number;
   subscribedByMe: boolean;
   ignoredByMe: boolean;
+  isBanned: boolean;
+  banReason: string | null;
 }
 
 export interface UserThreadItem {

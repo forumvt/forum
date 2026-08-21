@@ -19,6 +19,8 @@ export interface ThreadListItem {
   lastPostUserAvatar: string | null;
   authorIgnored?: boolean;
   lastPostIgnored?: boolean;
+  isLocked?: boolean;
+  isPinned?: boolean;
 }
 
 export interface ThreadSearchItem extends ThreadListItem {
@@ -47,6 +49,9 @@ export interface ThreadBySlug {
   updatedAt: Date;
   forumSlug: string;
   forumTitle: string;
+  isLocked: boolean;
+  isPinned: boolean;
+  deletedAt: Date | null;
 }
 
 export interface ThreadHeaderInfo {
@@ -54,6 +59,15 @@ export interface ThreadHeaderInfo {
   userId: string;
   userName: string | null;
   createdAt: Date;
+  isLocked: boolean;
+  isPinned: boolean;
+  deletedAt: Date | null;
+}
+
+export interface ThreadForumOption {
+  id: string;
+  title: string;
+  slug: string;
 }
 
 export interface ThreadClientProps {
@@ -62,6 +76,8 @@ export interface ThreadClientProps {
   threadSlug: string;
   forumSlug: string;
   forumTitle: string;
+  forumId: string;
+  forums: ThreadForumOption[];
   userId: string;
   isAuthenticated: boolean;
   currentUserRole?: string;

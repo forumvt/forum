@@ -165,6 +165,8 @@ async function SearchResults({
                         slug={thread.slug}
                         isUnread={thread.isUnread}
                         highlightQuery={query}
+                        isPinned={thread.isPinned}
+                        isLocked={thread.isLocked}
                       />
                     </div>
                     {thread.snippet && (

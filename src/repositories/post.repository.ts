@@ -32,6 +32,7 @@ export async function findByThreadIdPaginated(
     content: string;
     createdAt: Date;
     updatedAt: Date;
+    deletedAt: Date | null;
     userName: string | null;
     userAvatar: string | null;
     userId: string;
@@ -50,6 +51,7 @@ export async function findByThreadIdPaginated(
       content: postTable.content,
       createdAt: postTable.createdAt,
       updatedAt: postTable.updatedAt,
+      deletedAt: postTable.deletedAt,
       userName: userTable.name,
       userAvatar: userTable.image,
       userId: postTable.userId,
@@ -68,12 +70,14 @@ export async function findById(id: string): Promise<{
   id: string;
   userId: string;
   threadId: string;
+  deletedAt: Date | null;
 } | null> {
   const [row] = await db
     .select({
       id: postTable.id,
       userId: postTable.userId,
       threadId: postTable.threadId,
+      deletedAt: postTable.deletedAt,
     })
     .from(postTable)
     .where(eq(postTable.id, id))
@@ -94,4 +98,22 @@ export async function updateContent(
     .where(eq(postTable.id, id))
     .returning({ updatedAt: postTable.updatedAt });
   return row ?? null;
+}
+
+export async function softDelete(id: string): Promise<boolean> {
+  const [row] = await db
+    .update(postTable)
+    .set({ deletedAt: new Date(), updatedAt: new Date() })
+    .where(eq(postTable.id, id))
+    .returning({ id: postTable.id });
+  return Boolean(row);
+}
+
+export async function restore(id: string): Promise<boolean> {
+  const [row] = await db
+    .update(postTable)
+    .set({ deletedAt: null, updatedAt: new Date() })
+    .where(eq(postTable.id, id))
+    .returning({ id: postTable.id });
+  return Boolean(row);
 }

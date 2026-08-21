@@ -21,10 +21,11 @@ interface ReplyFormProps {
   userId?: string;
   isAuthenticated: boolean;
   forum: string;
+  isLocked?: boolean;
 }
 
 export const ReplyForm = forwardRef<ReplyFormHandle, ReplyFormProps>(
-  ({ threadId, userId, isAuthenticated, forum }, ref) => {
+  ({ threadId, userId, isAuthenticated, forum, isLocked }, ref) => {
     const [content, setContent] = useState("");
     const [quotedUserId, setQuotedUserId] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,6 +79,19 @@ export const ReplyForm = forwardRef<ReplyFormHandle, ReplyFormProps>(
         setIsSubmitting(false);
       }
     };
+
+    if (isLocked) {
+      return (
+        <Card className="border-border bg-muted/50 p-6 text-center">
+          <h3 className="text-foreground mb-2 text-lg font-semibold">
+            Tópico trancado
+          </h3>
+          <p className="text-muted-foreground">
+            Este tópico não aceita novas respostas.
+          </p>
+        </Card>
+      );
+    }
 
     if (!isAuthenticated) {
       return (

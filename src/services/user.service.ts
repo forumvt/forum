@@ -78,6 +78,8 @@ export async function getProfile(
     subscriptionCount: subStats.subscriptionCount,
     subscribedByMe: subStats.subscribedByMe,
     ignoredByMe,
+    isBanned: Boolean(user.bannedAt),
+    banReason: user.banReason,
   };
 }
 

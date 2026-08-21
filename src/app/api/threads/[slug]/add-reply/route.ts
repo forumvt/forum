@@ -30,6 +30,25 @@ export async function POST(request: Request) {
       typeof quotedUserId === "string" ? quotedUserId : null,
     );
 
+    if (!result.ok) {
+      if (result.error === "banned") {
+        return NextResponse.json(
+          { error: "Conta suspensa", reason: result.reason },
+          { status: 403 },
+        );
+      }
+      if (result.error === "locked") {
+        return NextResponse.json(
+          { error: "Este tópico está trancado." },
+          { status: 403 },
+        );
+      }
+      return NextResponse.json(
+        { error: "Tópico não encontrado." },
+        { status: 404 },
+      );
+    }
+
     return NextResponse.json({ success: true, post: { id: result.id } });
   } catch (error) {
     console.error("Error creating post:", error);

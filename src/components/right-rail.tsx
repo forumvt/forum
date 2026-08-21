@@ -5,6 +5,8 @@ import Link from "next/link";
 import { OnlineStats } from "@/components/online/online-stats";
 import { Card, CardContent } from "@/components/ui/card";
 import { auth } from "@/lib/auth";
+import { isStaff } from "@/lib/permissions";
+import { resolveActor } from "@/lib/session-actor";
 import * as statsService from "@/services/stats.service";
 
 const filterLinkClass =
@@ -13,6 +15,7 @@ const filterLinkClass =
 export async function RightRail() {
   const totals = await statsService.getTotals();
   const session = await auth.api.getSession({ headers: await headers() });
+  const actor = session?.user ? await resolveActor(session.user) : null;
 
   return (
     <div className="flex w-full flex-col gap-4">
@@ -32,6 +35,14 @@ export async function RightRail() {
                 <Link href={"/ignorados" as never} className={filterLinkClass}>
                   Ignorados
                 </Link>
+                {isStaff(actor?.role) ? (
+                  <Link
+                    href={"/moderacao" as never}
+                    className={filterLinkClass}
+                  >
+                    Moderação
+                  </Link>
+                ) : null}
                 <Link
                   href="/?filter=answered-by-me"
                   className={filterLinkClass}

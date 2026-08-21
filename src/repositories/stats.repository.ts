@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { isNull, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { forumTable, postTable, threadTable, userTable } from "@/db/schema";
@@ -20,7 +20,8 @@ export async function getCountForums(): Promise<number> {
 export async function getCountThreads(): Promise<number> {
   const result = await db
     .select({ count: sql<number>`count(*)` })
-    .from(threadTable);
+    .from(threadTable)
+    .where(isNull(threadTable.deletedAt));
   return result[0].count;
 }
 

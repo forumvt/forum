@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, User } from "lucide-react";
+import { Clock, Lock, Pin, User } from "lucide-react";
 import Link from "next/link";
 import { useRef } from "react";
 
@@ -11,6 +11,7 @@ import {
 } from "@/components/ignored-reveal";
 import { PostCard } from "@/components/post-card";
 import { ReplyForm, ReplyFormHandle } from "@/components/reply-form";
+import { ThreadModerationBar } from "@/components/thread-moderation-bar";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -21,7 +22,13 @@ import {
 } from "@/components/ui/breadcrumb";
 import { UserNameLink } from "@/components/user-link";
 import { authClient } from "@/lib/auth-client";
-import { canEditPost, getSessionRole } from "@/lib/permissions";
+import {
+  canDeletePost,
+  canEditPost,
+  canModerateContent,
+  getSessionRole,
+  isStaff,
+} from "@/lib/permissions";
 import type { ThreadClientProps as ThreadClientPropsType } from "@/types/thread";
 
 function ThreadHeader({
@@ -32,10 +39,28 @@ function ThreadHeader({
     userId: string;
     userName: string | null;
     createdAt: Date;
+    isLocked: boolean;
+    isPinned: boolean;
   };
 }) {
   return (
     <div className="chaos-card bg-primary text-primary-foreground p-4 md:p-6">
+      {(thread.isPinned || thread.isLocked) && (
+        <div className="mb-3 flex flex-wrap gap-2">
+          {thread.isPinned ? (
+            <span className="bg-primary-foreground/15 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium">
+              <Pin className="size-3" />
+              Fixado
+            </span>
+          ) : null}
+          {thread.isLocked ? (
+            <span className="bg-primary-foreground/15 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium">
+              <Lock className="size-3" />
+              Trancado
+            </span>
+          ) : null}
+        </div>
+      )}
       <h1 className="mb-4 text-xl font-bold break-words md:text-3xl">
         {thread.title}
       </h1>
@@ -64,6 +89,8 @@ export function ThreadClient({
   threadSlug,
   forumSlug,
   forumTitle,
+  forumId,
+  forums,
   userId,
   isAuthenticated,
   currentUserRole,
@@ -73,6 +100,8 @@ export function ThreadClient({
   const { data: session } = authClient.useSession();
   const actorId = session?.user?.id || userId;
   const actorRole = getSessionRole(session?.user) ?? currentUserRole;
+  const staff = isStaff(actorRole);
+  const lockedForViewer = thread.isLocked && !staff;
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6">
@@ -112,6 +141,18 @@ export function ThreadClient({
 
       <ThreadHeader thread={thread} />
 
+      {canModerateContent(actorRole) ? (
+        <ThreadModerationBar
+          slug={threadSlug}
+          isLocked={thread.isLocked}
+          isPinned={thread.isPinned}
+          isDeleted={Boolean(thread.deletedAt)}
+          forumId={forumId}
+          forums={forums}
+          canDelete
+        />
+      ) : null}
+
       <div className="space-y-6">
         {posts.map((post) => (
           <IgnoredReveal
@@ -125,7 +166,13 @@ export function ThreadClient({
           >
             <PostCard
               post={post}
-              canEdit={canEditPost(actorId, actorRole, post.userId)}
+              canEdit={
+                canEditPost(actorId, actorRole, post.userId) && !post.isDeleted
+              }
+              canDelete={canDeletePost(actorId, actorRole, post.userId)}
+              canReport={Boolean(actorId) && actorId !== post.userId}
+              canModerate={staff}
+              threadId={threadId}
               threadSlug={threadSlug}
               onReply={(user, content, replyUserId) =>
                 replyFormRef.current?.replyTo(user, content, replyUserId)
@@ -141,6 +188,7 @@ export function ThreadClient({
         userId={userId}
         isAuthenticated={isAuthenticated}
         forum={threadSlug}
+        isLocked={lockedForViewer}
       />
     </div>
   );

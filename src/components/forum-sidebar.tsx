@@ -9,6 +9,7 @@ import {
   MessageSquareText,
   Search,
   Settings,
+  Shield,
   TvIcon,
   Users,
   UserX,
@@ -35,6 +36,8 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { authClient } from "@/lib/auth-client";
+import { getSessionRole, isStaff } from "@/lib/permissions";
 
 const mainNav = [
   { title: "Início", icon: Home, url: "/" },
@@ -53,6 +56,8 @@ const mainNav = [
 
 export function ForumSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
+  const { data: session } = authClient.useSession();
+  const staff = isStaff(getSessionRole(session?.user));
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -115,6 +120,19 @@ export function ForumSidebar(props: React.ComponentProps<typeof Sidebar>) {
                   </CollapsibleContent>
                 </Collapsible>
               </SidebarMenuItem>
+              {staff ? (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname.startsWith("/moderacao")}
+                  >
+                    <Link href={"/moderacao" as never}>
+                      <Shield />
+                      <span>Moderação</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ) : null}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -1,5 +1,16 @@
-import { aliasedTable } from "drizzle-orm";
-import { and, desc, eq, ilike, inArray, isNotNull, or, sql } from "drizzle-orm";
+import {
+  aliasedTable,
+  and,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  isNotNull,
+  isNull,
+  or,
+  type SQL,
+  sql,
+} from "drizzle-orm";
 
 import { db } from "@/db";
 import {
@@ -21,6 +32,11 @@ type Db = typeof db;
 
 const lastPostUser = aliasedTable(userTable, "last_post_user");
 const NO_SESSION_USER_ID = "__no_session__";
+const visibleThreads = isNull(threadTable.deletedAt);
+
+function andVisible(condition?: SQL) {
+  return condition ? and(visibleThreads, condition) : visibleThreads;
+}
 
 export async function findBySlug(slug: string): Promise<ThreadBySlug | null> {
   const [row] = await db
@@ -38,6 +54,9 @@ export async function findBySlug(slug: string): Promise<ThreadBySlug | null> {
       updatedAt: threadTable.updatedAt,
       forumSlug: forumTable.slug,
       forumTitle: forumTable.title,
+      isLocked: threadTable.isLocked,
+      isPinned: threadTable.isPinned,
+      deletedAt: threadTable.deletedAt,
     })
     .from(threadTable)
     .leftJoin(userTable, eq(threadTable.userId, userTable.id))
@@ -72,19 +91,17 @@ export async function findManyPaginated(
       .select({ id: threadTable.id })
       .from(threadTable)
       .leftJoin(postTable, eq(postTable.threadId, threadTable.id));
-    const rows = forumWhere
-      ? await baseUnanswered
-          .where(forumWhere)
-          .groupBy(threadTable.id)
-          .having(sql`COUNT(${postTable.id}) = 0`)
-      : await baseUnanswered
-          .groupBy(threadTable.id)
-          .having(sql`COUNT(${postTable.id}) = 0`);
+    const rows = await baseUnanswered
+      .where(andVisible(forumWhere))
+      .groupBy(threadTable.id)
+      .having(sql`COUNT(${postTable.id}) = 0`);
     totalCount = rows.length;
   } else if (filter === "answered-by-me" && sessionUserId) {
-    const answeredWhere = forumWhere
-      ? and(eq(postTable.userId, sessionUserId), forumWhere)
-      : eq(postTable.userId, sessionUserId);
+    const answeredWhere = andVisible(
+      forumWhere
+        ? and(eq(postTable.userId, sessionUserId), forumWhere)
+        : eq(postTable.userId, sessionUserId),
+    );
     const rows = await db
       .selectDistinct({ threadId: postTable.threadId })
       .from(postTable)
@@ -92,9 +109,11 @@ export async function findManyPaginated(
       .where(answeredWhere);
     totalCount = rows.length;
   } else if (filter === "viewed-by-me" && sessionUserId) {
-    const viewedWhere = forumWhere
-      ? and(eq(threadReadTable.userId, sessionUserId), forumWhere)
-      : eq(threadReadTable.userId, sessionUserId);
+    const viewedWhere = andVisible(
+      forumWhere
+        ? and(eq(threadReadTable.userId, sessionUserId), forumWhere)
+        : eq(threadReadTable.userId, sessionUserId),
+    );
     const viewedQuery = db
       .select({ totalCount: sql<number>`count(*)::int` })
       .from(threadReadTable)
@@ -103,7 +122,11 @@ export async function findManyPaginated(
     const [r] = await viewedQuery;
     totalCount = r?.totalCount ?? 0;
   } else if (filter === "from-subs") {
-    if (!sessionUserId || !subscribedUserIds || subscribedUserIds.length === 0) {
+    if (
+      !sessionUserId ||
+      !subscribedUserIds ||
+      subscribedUserIds.length === 0
+    ) {
       totalCount = 0;
     } else {
       const subWhere = forumWhere
@@ -112,18 +135,14 @@ export async function findManyPaginated(
       const [r] = await db
         .select({ totalCount: sql<number>`count(*)::int` })
         .from(threadTable)
-        .where(subWhere);
+        .where(andVisible(subWhere));
       totalCount = r?.totalCount ?? 0;
     }
   } else {
-    const [r] = forumWhere
-      ? await db
-          .select({ totalCount: sql<number>`count(*)::int` })
-          .from(threadTable)
-          .where(forumWhere)
-      : await db
-          .select({ totalCount: sql<number>`count(*)::int` })
-          .from(threadTable);
+    const [r] = await db
+      .select({ totalCount: sql<number>`count(*)::int` })
+      .from(threadTable)
+      .where(andVisible(forumWhere));
     totalCount = r?.totalCount ?? 0;
   }
 
@@ -140,7 +159,7 @@ export async function findManyPaginated(
     answeredThreadIds = rows.map((r) => r.threadId).filter(Boolean);
   }
 
-  const filterWhere =
+  const filterWhere = andVisible(
     filter === "answered-by-me" && sessionUserId
       ? answeredThreadIds.length > 0
         ? forumWhere
@@ -154,12 +173,15 @@ export async function findManyPaginated(
           ? and(forumWhere, isNotNull(threadReadTable.lastReadAt))
           : isNotNull(threadReadTable.lastReadAt)
         : filter === "from-subs"
-          ? !sessionUserId || !subscribedUserIds || subscribedUserIds.length === 0
+          ? !sessionUserId ||
+            !subscribedUserIds ||
+            subscribedUserIds.length === 0
             ? sql`1 = 0`
             : forumWhere
               ? and(forumWhere, inArray(threadTable.userId, subscribedUserIds))
               : inArray(threadTable.userId, subscribedUserIds)
-          : (forumWhere ?? undefined);
+          : forumWhere,
+  );
 
   const baseQuery = db
     .select({
@@ -182,6 +204,8 @@ export async function findManyPaginated(
       lastPostUserId: threadTable.lastPostUserId,
       lastPostUserName: lastPostUser.name,
       lastPostUserAvatar: lastPostUser.image,
+      isLocked: threadTable.isLocked,
+      isPinned: threadTable.isPinned,
     })
     .from(threadTable)
     .leftJoin(postTable, eq(postTable.threadId, threadTable.id))
@@ -210,6 +234,8 @@ export async function findManyPaginated(
     userTable.image,
     lastPostUser.name,
     lastPostUser.image,
+    threadTable.isLocked,
+    threadTable.isPinned,
   );
   const withHaving =
     filter === "unanswered"
@@ -217,7 +243,7 @@ export async function findManyPaginated(
       : withGroupBy;
 
   const threads = await withHaving
-    .orderBy(desc(threadTable.lastPostAt))
+    .orderBy(desc(threadTable.isPinned), desc(threadTable.lastPostAt))
     .limit(per)
     .offset((page - 1) * per);
 
@@ -253,7 +279,7 @@ export async function searchPaginated(
   const [countRow] = await db
     .select({ totalCount: sql<number>`count(*)::int` })
     .from(threadTable)
-    .where(searchWhere);
+    .where(andVisible(searchWhere));
   const totalCount = countRow?.totalCount ?? 0;
 
   const matchedPostContent = sql<string | null>`MAX((
@@ -293,6 +319,8 @@ export async function searchPaginated(
       lastPostUserAvatar: lastPostUser.image,
       forumTitle: forumTable.title,
       forumSlug: forumTable.slug,
+      isLocked: threadTable.isLocked,
+      isPinned: threadTable.isPinned,
       matchedPostContent,
     })
     .from(threadTable)
@@ -307,7 +335,7 @@ export async function searchPaginated(
         eq(threadReadTable.userId, effectiveUserId),
       ),
     )
-    .where(searchWhere)
+    .where(andVisible(searchWhere))
     .groupBy(
       threadTable.id,
       threadTable.title,
@@ -325,8 +353,10 @@ export async function searchPaginated(
       lastPostUser.image,
       forumTable.title,
       forumTable.slug,
+      threadTable.isLocked,
+      threadTable.isPinned,
     )
-    .orderBy(desc(threadTable.lastPostAt))
+    .orderBy(desc(threadTable.isPinned), desc(threadTable.lastPostAt))
     .limit(per)
     .offset((page - 1) * per);
 
@@ -410,15 +440,22 @@ export async function markThreadAsRead(
     });
 }
 
-export async function findMetaById(
-  threadId: string,
-): Promise<{ id: string; userId: string; title: string; slug: string } | null> {
+export async function findMetaById(threadId: string): Promise<{
+  id: string;
+  userId: string;
+  title: string;
+  slug: string;
+  isLocked: boolean;
+  deletedAt: Date | null;
+} | null> {
   const [row] = await db
     .select({
       id: threadTable.id,
       userId: threadTable.userId,
       title: threadTable.title,
       slug: threadTable.slug,
+      isLocked: threadTable.isLocked,
+      deletedAt: threadTable.deletedAt,
     })
     .from(threadTable)
     .where(eq(threadTable.id, threadId))
@@ -432,4 +469,48 @@ export async function findViewerUserIds(threadId: string): Promise<string[]> {
     .from(threadReadTable)
     .where(eq(threadReadTable.threadId, threadId));
   return rows.map((row) => row.userId);
+}
+
+export async function setLocked(
+  threadId: string,
+  isLocked: boolean,
+): Promise<void> {
+  await db
+    .update(threadTable)
+    .set({ isLocked, updatedAt: new Date() })
+    .where(eq(threadTable.id, threadId));
+}
+
+export async function setPinned(
+  threadId: string,
+  isPinned: boolean,
+): Promise<void> {
+  await db
+    .update(threadTable)
+    .set({ isPinned, updatedAt: new Date() })
+    .where(eq(threadTable.id, threadId));
+}
+
+export async function setForumId(
+  threadId: string,
+  forumId: string,
+): Promise<void> {
+  await db
+    .update(threadTable)
+    .set({ forumId, updatedAt: new Date() })
+    .where(eq(threadTable.id, threadId));
+}
+
+export async function softDelete(threadId: string): Promise<void> {
+  await db
+    .update(threadTable)
+    .set({ deletedAt: new Date(), updatedAt: new Date() })
+    .where(eq(threadTable.id, threadId));
+}
+
+export async function restore(threadId: string): Promise<void> {
+  await db
+    .update(threadTable)
+    .set({ deletedAt: null, updatedAt: new Date() })
+    .where(eq(threadTable.id, threadId));
 }

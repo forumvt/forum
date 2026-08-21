@@ -1,4 +1,8 @@
-import { canEditPost } from "@/lib/permissions";
+import {
+  canDeleteThread,
+  canEditPost,
+  canModerateContent,
+} from "@/lib/permissions";
 import {
   excerptAroundMatch,
   MIN_SEARCH_QUERY_LENGTH,
@@ -6,6 +10,7 @@ import {
 } from "@/lib/search";
 import * as threadRepo from "@/repositories/thread.repository";
 import * as ignoreService from "@/services/ignore.service";
+import * as moderationService from "@/services/moderation.service";
 import * as notificationService from "@/services/notification.service";
 import * as subscriptionService from "@/services/subscription.service";
 import type { FilterType } from "@/types/filters";
@@ -150,7 +155,11 @@ export async function createThread(data: {
   description: string;
   forumId: string;
   userId: string;
-}): Promise<{ id: string }> {
+}): Promise<{ id: string } | { error: "banned"; reason: string | null }> {
+  const block = await moderationService.getWriteBlock(data.userId);
+  if (block.blocked) {
+    return { error: "banned", reason: block.reason };
+  }
   const slug = generateSlug(data.title);
   return threadRepo.create({
     title: data.title,
@@ -183,11 +192,102 @@ export async function updateOriginalPost(
   actor: { id: string; role?: string },
 ): Promise<UpdateOriginalPostResult> {
   const thread = await threadRepo.findBySlug(slug);
-  if (!thread) return { ok: false, error: "not_found" };
+  if (!thread || thread.deletedAt) return { ok: false, error: "not_found" };
   if (!canEditPost(actor.id, actor.role, thread.userId)) {
     return { ok: false, error: "forbidden" };
   }
   const updated = await threadRepo.updateDescription(slug, description);
   if (!updated) return { ok: false, error: "not_found" };
   return { ok: true, updatedAt: updated.updatedAt };
+}
+
+export type ModerateThreadAction =
+  | "lock"
+  | "unlock"
+  | "pin"
+  | "unpin"
+  | "move"
+  | "delete"
+  | "restore";
+
+export type ModerateThreadResult =
+  | { ok: true }
+  | { ok: false; error: "not_found" | "forbidden" | "invalid" };
+
+export async function moderateThread(
+  slug: string,
+  actor: { id: string; role?: string },
+  payload: { action: ModerateThreadAction; forumId?: string },
+): Promise<ModerateThreadResult> {
+  const thread = await threadRepo.findBySlug(slug);
+  if (!thread) return { ok: false, error: "not_found" };
+
+  if (payload.action === "delete") {
+    if (!canDeleteThread(actor.id, actor.role, thread.userId)) {
+      return { ok: false, error: "forbidden" };
+    }
+    await threadRepo.softDelete(thread.id);
+    await moderationService.logAction({
+      actorUserId: actor.id,
+      action: "delete_thread",
+      targetType: "thread",
+      targetId: thread.id,
+      details: thread.title,
+    });
+    return { ok: true };
+  }
+
+  if (!canModerateContent(actor.role)) {
+    return { ok: false, error: "forbidden" };
+  }
+
+  if (payload.action === "restore") {
+    await threadRepo.restore(thread.id);
+    await moderationService.logAction({
+      actorUserId: actor.id,
+      action: "restore_thread",
+      targetType: "thread",
+      targetId: thread.id,
+    });
+    return { ok: true };
+  }
+
+  if (payload.action === "lock" || payload.action === "unlock") {
+    await threadRepo.setLocked(thread.id, payload.action === "lock");
+    await moderationService.logAction({
+      actorUserId: actor.id,
+      action: payload.action,
+      targetType: "thread",
+      targetId: thread.id,
+    });
+    return { ok: true };
+  }
+
+  if (payload.action === "pin" || payload.action === "unpin") {
+    await threadRepo.setPinned(thread.id, payload.action === "pin");
+    await moderationService.logAction({
+      actorUserId: actor.id,
+      action: payload.action,
+      targetType: "thread",
+      targetId: thread.id,
+    });
+    return { ok: true };
+  }
+
+  if (payload.action === "move") {
+    if (!payload.forumId) return { ok: false, error: "invalid" };
+    const exists = await moderationService.forumExists(payload.forumId);
+    if (!exists) return { ok: false, error: "invalid" };
+    await threadRepo.setForumId(thread.id, payload.forumId);
+    await moderationService.logAction({
+      actorUserId: actor.id,
+      action: "move",
+      targetType: "thread",
+      targetId: thread.id,
+      details: payload.forumId,
+    });
+    return { ok: true };
+  }
+
+  return { ok: false, error: "invalid" };
 }

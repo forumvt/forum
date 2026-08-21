@@ -166,6 +166,8 @@ async function ForumContent({
                           description={thread.description}
                           slug={thread.slug}
                           isUnread={thread.isUnread}
+                          isPinned={thread.isPinned}
+                          isLocked={thread.isLocked}
                         />
                       </div>
                       <div className="text-muted-foreground flex flex-col gap-2 text-xs sm:flex-row sm:items-center sm:gap-3">

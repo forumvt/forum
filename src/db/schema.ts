@@ -24,6 +24,8 @@ export const userTable = pgTable("user", {
     .$type<string | null>()
     .default("https://www.subeiros.com/eris-apple.png"),
   role: roleEnum("role").notNull().default("USER"),
+  bannedAt: timestamp("banned_at"),
+  banReason: text("ban_reason"),
   createdAt: timestamp("created_at")
     .$defaultFn(() => /* @__PURE__ */ new Date())
     .notNull(),
@@ -82,6 +84,9 @@ export const threadTable = pgTable("thread", {
   lastPostUserId: text("last_post_user_id").references(() => userTable.id, {
     onDelete: "set null",
   }),
+  isLocked: boolean("is_locked").notNull().default(false),
+  isPinned: boolean("is_pinned").notNull().default(false),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const threadReadTable = pgTable(
@@ -125,6 +130,7 @@ export const postTable = pgTable("post", {
     .references(() => userTable.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 // Relações da thread
@@ -318,5 +324,50 @@ export const userIgnoreTable = pgTable(
     pairUnique: unique().on(t.ignorerUserId, t.targetUserId),
     ignorerIdx: index("user_ignore_ignorer_idx").on(t.ignorerUserId),
     targetIdx: index("user_ignore_target_idx").on(t.targetUserId),
+  }),
+);
+
+export const moderationReportTable = pgTable(
+  "moderation_report",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    reporterUserId: text("reporter_user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    targetType: text("target_type").notNull(),
+    targetId: text("target_id").notNull(),
+    reason: text("reason").notNull(),
+    status: text("status").notNull().default("open"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    resolvedAt: timestamp("resolved_at"),
+    resolvedByUserId: text("resolved_by_user_id").references(
+      () => userTable.id,
+      { onDelete: "set null" },
+    ),
+  },
+  (t) => ({
+    statusIdx: index("moderation_report_status_idx").on(t.status, t.createdAt),
+    targetIdx: index("moderation_report_target_idx").on(
+      t.targetType,
+      t.targetId,
+    ),
+  }),
+);
+
+export const moderationLogTable = pgTable(
+  "moderation_log",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    actorUserId: text("actor_user_id").references(() => userTable.id, {
+      onDelete: "set null",
+    }),
+    action: text("action").notNull(),
+    targetType: text("target_type").notNull(),
+    targetId: text("target_id").notNull(),
+    details: text("details"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    createdIdx: index("moderation_log_created_idx").on(t.createdAt),
   }),
 );

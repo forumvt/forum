@@ -1,14 +1,16 @@
 "use client";
 
-import { Loader2, MessageSquare, Pencil, ThumbsUp } from "lucide-react";
+import { Loader2, MessageSquare, Pencil, ThumbsUp, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { BBCodeContent } from "@/components/bbcode-content";
 import { BBCodeEditor } from "@/components/bbcode-editor";
+import { ReportButton } from "@/components/report-button";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { UserAvatarLink, UserNameLink } from "@/components/user-link";
+import { DELETED_POST_NOTICE } from "@/lib/moderation-copy";
 import type { Post } from "@/types/post";
 
 import { Badge } from "./ui/badge";
@@ -92,6 +94,12 @@ function PostActions({
   onReply,
   canEdit,
   onEdit,
+  canDelete,
+  onDelete,
+  deleting,
+  canReport,
+  reportTargetType,
+  reportTargetId,
   likeCount,
   likedByMe,
   liking,
@@ -100,6 +108,12 @@ function PostActions({
   onReply: () => void;
   canEdit: boolean;
   onEdit: () => void;
+  canDelete: boolean;
+  onDelete: () => void;
+  deleting: boolean;
+  canReport: boolean;
+  reportTargetType: "post" | "thread";
+  reportTargetId: string;
   likeCount: number;
   likedByMe: boolean;
   liking: boolean;
@@ -135,6 +149,22 @@ function PostActions({
           Editar
         </Button>
       )}
+      {canDelete && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="text-destructive hover:text-destructive"
+          onClick={onDelete}
+          disabled={deleting}
+        >
+          <Trash2 />
+          Excluir
+        </Button>
+      )}
+      {canReport && (
+        <ReportButton targetType={reportTargetType} targetId={reportTargetId} />
+      )}
       <Button
         variant="ghost"
         size="sm"
@@ -167,11 +197,19 @@ export function PostCard({
   post,
   onReply,
   canEdit,
+  canDelete,
+  canReport,
+  canModerate,
+  threadId,
   threadSlug,
 }: {
   post: Post;
   onReply: (user: string, content: string, userId: string) => void;
   canEdit: boolean;
+  canDelete: boolean;
+  canReport: boolean;
+  canModerate: boolean;
+  threadId: string;
   threadSlug: string;
 }) {
   const [content, setContent] = useState(post.content);
@@ -183,6 +221,9 @@ export function PostCard({
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [likedByMe, setLikedByMe] = useState(post.likedByMe);
   const [liking, setLiking] = useState(false);
+  const [deleted, setDeleted] = useState(Boolean(post.isDeleted));
+  const [deleting, setDeleting] = useState(false);
+  const isOriginal = post.id.startsWith("thread-");
 
   async function toggleLike() {
     if (liking) return;
@@ -213,7 +254,10 @@ export function PostCard({
       }
       const data = (await res.json()) as { liked: boolean };
       setLikedByMe(data.liked);
-      setLikeCount(previousCount + (data.liked ? (previousLiked ? 0 : 1) : previousLiked ? -1 : 0));
+      setLikeCount(
+        previousCount +
+          (data.liked ? (previousLiked ? 0 : 1) : previousLiked ? -1 : 0),
+      );
     } catch {
       setLikedByMe(previousLiked);
       setLikeCount(previousCount);
@@ -274,7 +318,103 @@ export function PostCard({
     }
   }
 
-  const body = editing ? (
+  async function removePost() {
+    if (deleting) return;
+    const label = isOriginal
+      ? "Excluir este tópico?"
+      : "Excluir esta resposta?";
+    if (!window.confirm(label)) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(
+        isOriginal
+          ? `/api/threads/${encodeURIComponent(threadSlug)}/moderate`
+          : `/api/posts/${post.id}`,
+        {
+          method: isOriginal ? "PATCH" : "DELETE",
+          headers: isOriginal
+            ? { "Content-Type": "application/json" }
+            : undefined,
+          body: isOriginal ? JSON.stringify({ action: "delete" }) : undefined,
+        },
+      );
+      if (!res.ok) {
+        toast.error("Não foi possível excluir.");
+        return;
+      }
+      setDeleted(true);
+      toast.success(isOriginal ? "Tópico excluído." : "Resposta excluída.");
+      if (isOriginal) {
+        window.location.href = "/";
+      }
+    } catch {
+      toast.error("Não foi possível excluir.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  async function restoreDeleted() {
+    if (deleting) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/posts/${post.id}/restore`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        toast.error("Não foi possível restaurar.");
+        return;
+      }
+      setDeleted(false);
+      toast.success("Resposta restaurada.");
+    } catch {
+      toast.error("Não foi possível restaurar.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  const actions = (
+    <PostActions
+      canEdit={canEdit && !deleted}
+      onEdit={startEditing}
+      canDelete={canDelete && !deleted}
+      onDelete={() => void removePost()}
+      deleting={deleting}
+      canReport={canReport && !deleted}
+      reportTargetType={isOriginal ? "thread" : "post"}
+      reportTargetId={isOriginal ? threadId : post.id}
+      onReply={() => onReply(post.author, content, post.userId)}
+      likeCount={likeCount}
+      likedByMe={likedByMe}
+      liking={liking}
+      onLike={() => void toggleLike()}
+    />
+  );
+
+  const body = deleted ? (
+    <div className="space-y-3">
+      <p className="text-muted-foreground italic">{DELETED_POST_NOTICE}</p>
+      {canModerate ? (
+        <>
+          <div className="border-border bg-muted/40 rounded-md border p-3">
+            <BBCodeContent content={content} />
+          </div>
+          {!isOriginal ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={deleting}
+              onClick={() => void restoreDeleted()}
+            >
+              Restaurar
+            </Button>
+          ) : null}
+        </>
+      ) : null}
+    </div>
+  ) : editing ? (
     <div className="space-y-3">
       <BBCodeEditor
         id={`edit-post-${post.id}`}
@@ -317,17 +457,7 @@ export function PostCard({
         <MobilePostHeader post={post} />
         <div className="p-4">{body}</div>
         {!editing && (
-          <div className="border-border border-t px-4 py-3">
-            <PostActions
-              canEdit={canEdit}
-              onEdit={startEditing}
-              onReply={() => onReply(post.author, content, post.userId)}
-              likeCount={likeCount}
-              likedByMe={likedByMe}
-              liking={liking}
-              onLike={() => void toggleLike()}
-            />
-          </div>
+          <div className="border-border border-t px-4 py-3">{actions}</div>
         )}
       </div>
 
@@ -342,15 +472,7 @@ export function PostCard({
           <div className="flex-1 p-4">{body}</div>
           {!editing && (
             <div className="border-border mt-auto border-t px-4 py-3">
-              <PostActions
-                canEdit={canEdit}
-                onEdit={startEditing}
-                onReply={() => onReply(post.author, content, post.userId)}
-                likeCount={likeCount}
-                likedByMe={likedByMe}
-                liking={liking}
-                onLike={() => void toggleLike()}
-              />
+              {actions}
             </div>
           )}
         </div>

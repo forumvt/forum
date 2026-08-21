@@ -7,10 +7,7 @@ export async function POST(req: NextRequest) {
     const { image, userId } = await req.json();
 
     if (!image || !userId) {
-      return Response.json(
-        { error: "Parâmetros faltando" },
-        { status: 400 }
-      );
+      return Response.json({ error: "Parâmetros faltando" }, { status: 400 });
     }
 
     await userRepo.updateAvatar(userId, image);
@@ -20,7 +17,7 @@ export async function POST(req: NextRequest) {
     console.error(error);
     return Response.json(
       { error: "Falha ao atualizar avatar" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

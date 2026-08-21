@@ -1,5 +1,6 @@
 "use client";
 
+import { Lock, Pin } from "lucide-react";
 import Link from "next/link";
 
 import { HighlightText } from "@/components/highlight-text";
@@ -19,12 +20,16 @@ export function ThreadTitleWithPreview({
   slug,
   isUnread,
   highlightQuery,
+  isPinned,
+  isLocked,
 }: {
   title: string;
   description: string;
   slug: string;
   isUnread: boolean;
   highlightQuery?: string;
+  isPinned?: boolean;
+  isLocked?: boolean;
 }) {
   const preview =
     description.length > PREVIEW_MAX_LENGTH
@@ -46,6 +51,19 @@ export function ThreadTitleWithPreview({
                 : "text-muted-foreground font-normal",
             )}
           >
+            {isPinned || isLocked ? (
+              <span className="mr-2 inline-flex items-center gap-1 align-middle">
+                {isPinned ? (
+                  <Pin className="text-primary size-4" aria-label="Fixado" />
+                ) : null}
+                {isLocked ? (
+                  <Lock
+                    className="text-muted-foreground size-4"
+                    aria-label="Trancado"
+                  />
+                ) : null}
+              </span>
+            ) : null}
             {highlightQuery ? (
               <HighlightText text={title} query={highlightQuery} />
             ) : (

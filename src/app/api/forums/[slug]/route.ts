@@ -4,7 +4,7 @@ import * as forumService from "@/services/forum.service";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
+  { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
   const forum = await forumService.getForumBySlug(slug);

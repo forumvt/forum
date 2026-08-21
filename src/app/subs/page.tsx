@@ -139,6 +139,8 @@ async function SubsFeed({
                             description={thread.description}
                             slug={thread.slug}
                             isUnread={thread.isUnread}
+                            isPinned={thread.isPinned}
+                            isLocked={thread.isLocked}
                           />
                         </div>
                         <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">

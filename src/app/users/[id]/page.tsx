@@ -5,7 +5,9 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { ProfileSkeleton } from "@/components/profile-skeleton";
+import { ProfileStaffPanel } from "@/components/profile-staff-panel";
 import { ProfileSubscribePanel } from "@/components/profile-subscribe-panel";
+import { ReportButton } from "@/components/report-button";
 import { SubscribedUserList } from "@/components/subscribed-user-list";
 import { ThreadTitleWithPreview } from "@/components/thread-title-with-preview";
 import { ThreadsPagination } from "@/components/threads-pagination";
@@ -22,7 +24,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { UserAvatarLink } from "@/components/user-link";
 import { auth } from "@/lib/auth";
-import { roleLabel } from "@/lib/permissions";
+import { isStaff, roleLabel } from "@/lib/permissions";
+import { resolveActor } from "@/lib/session-actor";
 import { cn, formatMemberSince } from "@/lib/utils";
 import * as subscriptionService from "@/services/subscription.service";
 import * as userService from "@/services/user.service";
@@ -141,6 +144,7 @@ async function ProfileContent({
   );
   if (!profile) notFound();
 
+  const actor = session?.user ? await resolveActor(session.user) : null;
   const isOwnProfile = session?.user?.id === profile.id;
   const threadsResult =
     tab === "topics"
@@ -206,6 +210,9 @@ async function ProfileContent({
                 </h1>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <Badge variant="secondary">{roleLabel(profile.role)}</Badge>
+                  {profile.isBanned ? (
+                    <Badge variant="destructive">Suspenso</Badge>
+                  ) : null}
                   <span className="text-muted-foreground text-sm">
                     Membro desde {formatMemberSince(profile.createdAt)}
                   </span>
@@ -253,6 +260,20 @@ async function ProfileContent({
               subscriberCount={profile.subscriberCount}
               subscriptionCount={profile.subscriptionCount}
             />
+            {!isOwnProfile && session?.user ? (
+              <div className="mt-3">
+                <ReportButton targetType="user" targetId={profile.id} />
+              </div>
+            ) : null}
+            {isStaff(actor?.role) ? (
+              <ProfileStaffPanel
+                targetUserId={profile.id}
+                targetRole={profile.role}
+                isBanned={profile.isBanned}
+                viewerRole={actor?.role}
+                isOwnProfile={isOwnProfile}
+              />
+            ) : null}
           </div>
         </div>
       </Card>

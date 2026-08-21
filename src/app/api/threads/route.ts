@@ -38,6 +38,13 @@ export async function POST(req: Request) {
     userId: session.user.id,
   });
 
+  if ("error" in thread) {
+    return new Response(
+      JSON.stringify({ error: "Conta suspensa", reason: thread.reason }),
+      { status: 403, headers: { "Content-Type": "application/json" } },
+    );
+  }
+
   return new Response(JSON.stringify(thread), {
     headers: { "Content-Type": "application/json" },
   });
