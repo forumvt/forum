@@ -408,6 +408,28 @@ export async function incrementViews(threadId: string): Promise<void> {
     .where(eq(threadTable.id, threadId));
 }
 
+export async function updateAuthor(
+  slug: string,
+  userId: string,
+): Promise<boolean> {
+  const [row] = await db
+    .update(threadTable)
+    .set({ userId })
+    .where(eq(threadTable.slug, slug))
+    .returning({ id: threadTable.id });
+  return Boolean(row);
+}
+
+export async function updateLastPostUserId(
+  threadId: string,
+  userId: string,
+): Promise<void> {
+  await db
+    .update(threadTable)
+    .set({ lastPostUserId: userId })
+    .where(eq(threadTable.id, threadId));
+}
+
 export async function updateDescription(
   slug: string,
   description: string,

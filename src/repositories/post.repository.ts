@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { postTable, userTable } from "@/db/schema";
@@ -83,6 +83,30 @@ export async function findById(id: string): Promise<{
     .where(eq(postTable.id, id))
     .limit(1);
   return row ?? null;
+}
+
+export async function updateAuthor(
+  id: string,
+  userId: string,
+): Promise<boolean> {
+  const [row] = await db
+    .update(postTable)
+    .set({ userId })
+    .where(eq(postTable.id, id))
+    .returning({ id: postTable.id });
+  return Boolean(row);
+}
+
+export async function findLatestIdByThreadId(
+  threadId: string,
+): Promise<string | null> {
+  const [row] = await db
+    .select({ id: postTable.id })
+    .from(postTable)
+    .where(eq(postTable.threadId, threadId))
+    .orderBy(desc(postTable.createdAt))
+    .limit(1);
+  return row?.id ?? null;
 }
 
 export async function updateContent(

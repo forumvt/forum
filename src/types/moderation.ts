@@ -14,6 +14,7 @@ export type ModerationAction =
   | "ban"
   | "unban"
   | "role_change"
+  | "change_author"
   | "resolve_report"
   | "dismiss_report";
 

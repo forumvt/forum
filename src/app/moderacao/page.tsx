@@ -40,6 +40,7 @@ const actionLabel: Record<string, string> = {
   ban: "Suspendeu usuário",
   unban: "Reativou usuário",
   role_change: "Alterou cargo",
+  change_author: "Alterou autor",
   resolve_report: "Resolveu denúncia",
   dismiss_report: "Dispensou denúncia",
 };

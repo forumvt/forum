@@ -1,5 +1,10 @@
 import { db } from "@/db";
-import { canDeletePost, canEditPost, isStaff } from "@/lib/permissions";
+import {
+  canChangeAuthor,
+  canDeletePost,
+  canEditPost,
+  isStaff,
+} from "@/lib/permissions";
 import * as postRepo from "@/repositories/post.repository";
 import * as threadRepo from "@/repositories/thread.repository";
 import * as userRepo from "@/repositories/user.repository";
@@ -106,6 +111,43 @@ export async function updatePostContent(
   const updated = await postRepo.updateContent(postId, content);
   if (!updated) return { ok: false, error: "not_found" };
   return { ok: true, updatedAt: updated.updatedAt };
+}
+
+export type ChangePostAuthorResult =
+  | { ok: true; author: { id: string; name: string; avatar: string | null } }
+  | { ok: false; error: "not_found" | "forbidden" | "same" | "user_not_found" };
+
+export async function changePostAuthor(
+  postId: string,
+  nextUserId: string,
+  actor: { id: string; role?: string },
+): Promise<ChangePostAuthorResult> {
+  if (!canChangeAuthor(actor.role)) return { ok: false, error: "forbidden" };
+  const post = await postRepo.findById(postId);
+  if (!post) return { ok: false, error: "not_found" };
+  if (post.userId === nextUserId) return { ok: false, error: "same" };
+  const [currentUser, nextUser] = await Promise.all([
+    userRepo.findPublicById(post.userId),
+    userRepo.findPublicById(nextUserId),
+  ]);
+  if (!nextUser) return { ok: false, error: "user_not_found" };
+  const updated = await postRepo.updateAuthor(postId, nextUserId);
+  if (!updated) return { ok: false, error: "not_found" };
+  const latestId = await postRepo.findLatestIdByThreadId(post.threadId);
+  if (latestId === postId) {
+    await threadRepo.updateLastPostUserId(post.threadId, nextUserId);
+  }
+  await moderationService.logAction({
+    actorUserId: actor.id,
+    action: "change_author",
+    targetType: "post",
+    targetId: postId,
+    details: `${currentUser?.name ?? post.userId} → ${nextUser.name}`,
+  });
+  return {
+    ok: true,
+    author: { id: nextUser.id, name: nextUser.name, avatar: nextUser.avatar },
+  };
 }
 
 export type DeletePostResult =

@@ -68,6 +68,10 @@ export function canAssignRole(actorRole?: string | null): boolean {
   return isAdmin(actorRole);
 }
 
+export function canChangeAuthor(role?: string | null): boolean {
+  return isAdmin(role);
+}
+
 export function getSessionRole(user: unknown): string | undefined {
   if (!user || typeof user !== "object" || !("role" in user)) return undefined;
   const role = (user as { role: unknown }).role;

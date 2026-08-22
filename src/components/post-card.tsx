@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { BBCodeContent } from "@/components/bbcode-content";
 import { BBCodeEditor } from "@/components/bbcode-editor";
+import { ChangeAuthorSheet } from "@/components/change-author-sheet";
 import { ReportButton } from "@/components/report-button";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -29,7 +30,13 @@ function formatEditedAt(updatedAt: string): string {
   return new Date(updatedAt).toLocaleString("pt-BR");
 }
 
-function UserSidebar({ post }: { post: Post }) {
+function UserSidebar({
+  post,
+  changeAuthor,
+}: {
+  post: Post;
+  changeAuthor?: { saveUrl: string };
+}) {
   return (
     <div className="border-border bg-muted w-48 shrink-0 border-r p-4">
       <div className="text-center">
@@ -46,6 +53,15 @@ function UserSidebar({ post }: { post: Post }) {
           <Badge variant="secondary">{post.title}</Badge>
           {post.isOriginalPoster && <Badge>OP</Badge>}
         </div>
+        {changeAuthor ? (
+          <div className="mt-3">
+            <ChangeAuthorSheet
+              currentUserId={post.userId}
+              currentUserName={post.author}
+              saveUrl={changeAuthor.saveUrl}
+            />
+          </div>
+        ) : null}
       </div>
       <div className="text-muted-foreground mt-3 space-y-1 text-xs">
         <div>Membro desde: {post.joinDate}</div>
@@ -56,7 +72,13 @@ function UserSidebar({ post }: { post: Post }) {
   );
 }
 
-function MobilePostHeader({ post }: { post: Post }) {
+function MobilePostHeader({
+  post,
+  changeAuthor,
+}: {
+  post: Post;
+  changeAuthor?: { saveUrl: string };
+}) {
   return (
     <div className="border-border bg-muted border-b p-4">
       <div className="flex items-center gap-3">
@@ -86,6 +108,15 @@ function MobilePostHeader({ post }: { post: Post }) {
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <span className="text-muted-foreground text-sm">{post.timestamp}</span>
       </div>
+      {changeAuthor ? (
+        <div className="mt-3">
+          <ChangeAuthorSheet
+            currentUserId={post.userId}
+            currentUserName={post.author}
+            saveUrl={changeAuthor.saveUrl}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -200,6 +231,7 @@ export function PostCard({
   canDelete,
   canReport,
   canModerate,
+  canChangeAuthor,
   threadId,
   threadSlug,
 }: {
@@ -209,6 +241,7 @@ export function PostCard({
   canDelete: boolean;
   canReport: boolean;
   canModerate: boolean;
+  canChangeAuthor?: boolean;
   threadId: string;
   threadSlug: string;
 }) {
@@ -224,6 +257,13 @@ export function PostCard({
   const [deleted, setDeleted] = useState(Boolean(post.isDeleted));
   const [deleting, setDeleting] = useState(false);
   const isOriginal = post.id.startsWith("thread-");
+  const changeAuthor = canChangeAuthor
+    ? {
+        saveUrl: isOriginal
+          ? `/api/threads/${encodeURIComponent(threadSlug)}/author`
+          : `/api/posts/${encodeURIComponent(post.id)}/author`,
+      }
+    : undefined;
 
   async function toggleLike() {
     if (liking) return;
@@ -454,7 +494,7 @@ export function PostCard({
   return (
     <Card className="border-border overflow-hidden border bg-card">
       <div className="block md:hidden">
-        <MobilePostHeader post={post} />
+        <MobilePostHeader post={post} changeAuthor={changeAuthor} />
         <div className="p-4">{body}</div>
         {!editing && (
           <div className="border-border border-t px-4 py-3">{actions}</div>
@@ -462,7 +502,7 @@ export function PostCard({
       </div>
 
       <div className="hidden md:flex">
-        <UserSidebar post={post} />
+        <UserSidebar post={post} changeAuthor={changeAuthor} />
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="border-border border-b px-4 py-2">
             <span className="text-muted-foreground text-sm">

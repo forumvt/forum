@@ -23,6 +23,7 @@ import {
 import { UserNameLink } from "@/components/user-link";
 import { authClient } from "@/lib/auth-client";
 import {
+  canChangeAuthor,
   canDeletePost,
   canEditPost,
   canModerateContent,
@@ -172,6 +173,7 @@ export function ThreadClient({
               canDelete={canDeletePost(actorId, actorRole, post.userId)}
               canReport={Boolean(actorId) && actorId !== post.userId}
               canModerate={staff}
+              canChangeAuthor={canChangeAuthor(actorRole)}
               threadId={threadId}
               threadSlug={threadSlug}
               onReply={(user, content, replyUserId) =>

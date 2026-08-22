@@ -1,4 +1,5 @@
 import {
+  canChangeAuthor,
   canDeleteThread,
   canEditPost,
   canModerateContent,
@@ -9,6 +10,7 @@ import {
   normalizeSearchQuery,
 } from "@/lib/search";
 import * as threadRepo from "@/repositories/thread.repository";
+import * as userRepo from "@/repositories/user.repository";
 import * as ignoreService from "@/services/ignore.service";
 import * as moderationService from "@/services/moderation.service";
 import * as notificationService from "@/services/notification.service";
@@ -199,6 +201,36 @@ export async function updateOriginalPost(
   const updated = await threadRepo.updateDescription(slug, description);
   if (!updated) return { ok: false, error: "not_found" };
   return { ok: true, updatedAt: updated.updatedAt };
+}
+
+export type ChangeAuthorResult =
+  | { ok: true; author: { id: string; name: string; avatar: string | null } }
+  | { ok: false; error: "not_found" | "forbidden" | "same" | "user_not_found" };
+
+export async function changeThreadAuthor(
+  slug: string,
+  nextUserId: string,
+  actor: { id: string; role?: string },
+): Promise<ChangeAuthorResult> {
+  if (!canChangeAuthor(actor.role)) return { ok: false, error: "forbidden" };
+  const thread = await threadRepo.findBySlug(slug);
+  if (!thread) return { ok: false, error: "not_found" };
+  if (thread.userId === nextUserId) return { ok: false, error: "same" };
+  const nextUser = await userRepo.findPublicById(nextUserId);
+  if (!nextUser) return { ok: false, error: "user_not_found" };
+  const updated = await threadRepo.updateAuthor(slug, nextUserId);
+  if (!updated) return { ok: false, error: "not_found" };
+  await moderationService.logAction({
+    actorUserId: actor.id,
+    action: "change_author",
+    targetType: "thread",
+    targetId: thread.id,
+    details: `${thread.userName ?? thread.userId} → ${nextUser.name}`,
+  });
+  return {
+    ok: true,
+    author: { id: nextUser.id, name: nextUser.name, avatar: nextUser.avatar },
+  };
 }
 
 export type ModerateThreadAction =
