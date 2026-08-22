@@ -59,6 +59,7 @@ function UserSidebar({
               currentUserId={post.userId}
               currentUserName={post.author}
               saveUrl={changeAuthor.saveUrl}
+              triggerClassName="h-11 min-h-11 w-full px-3 text-sm"
             />
           </div>
         ) : null}
@@ -105,18 +106,20 @@ function MobilePostHeader({
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-        <span className="text-muted-foreground text-sm">{post.timestamp}</span>
-      </div>
       {changeAuthor ? (
         <div className="mt-3">
           <ChangeAuthorSheet
             currentUserId={post.userId}
             currentUserName={post.author}
             saveUrl={changeAuthor.saveUrl}
+            triggerClassName="h-11 min-h-11 w-full px-3 text-sm"
           />
         </div>
       ) : null}
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <span className="text-muted-foreground text-sm">{post.timestamp}</span>
+      </div>
     </div>
   );
 }
