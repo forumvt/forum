@@ -28,10 +28,12 @@ export function ChangeAuthorSheet({
   currentUserId,
   currentUserName,
   saveUrl,
+  triggerClassName,
 }: {
   currentUserId: string;
   currentUserName: string;
   saveUrl: string;
+  triggerClassName?: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -130,7 +132,9 @@ export function ChangeAuthorSheet({
           type="button"
           variant="outline"
           size="sm"
-          className="h-10 min-h-10 w-full"
+          className={
+            triggerClassName ?? "h-11 min-h-11 w-full px-3 text-sm"
+          }
         >
           <UserPen />
           Alterar autor
@@ -215,21 +219,21 @@ export function ChangeAuthorSheet({
         <SheetFooter className="border-border border-t sm:flex-col">
           <Button
             type="button"
-            className="h-12 w-full text-base"
-            disabled={!selected || selected.id === currentUserId || saving}
-            onClick={() => void confirmChange()}
-          >
-            {saving ? <Loader2 className="animate-spin" /> : null}
-            {saving ? "Salvando..." : "Confirmar"}
-          </Button>
-          <Button
-            type="button"
             variant="outline"
             className="h-12 w-full text-base"
             disabled={saving}
             onClick={() => handleOpenChange(false)}
           >
             Cancelar
+          </Button>
+          <Button
+            type="button"
+            className="h-12 w-full text-base"
+            disabled={!selected || selected.id === currentUserId || saving}
+            onClick={() => void confirmChange()}
+          >
+            {saving ? <Loader2 className="animate-spin" /> : null}
+            {saving ? "Salvando..." : "Confirmar"}
           </Button>
         </SheetFooter>
       </SheetContent>
