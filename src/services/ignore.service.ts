@@ -1,15 +1,21 @@
 import * as ignoreRepo from "@/repositories/ignore.repository";
 import * as userRepo from "@/repositories/user.repository";
+import * as moderationService from "@/services/moderation.service";
 import type { IgnoredUser } from "@/types/user";
 
 export type ToggleIgnoreResult =
   | { ok: true; ignored: boolean }
-  | { ok: false; error: "not_found" | "self" };
+  | { ok: false; error: "not_found" | "self" | "banned"; reason?: string | null };
 
 export async function toggleIgnore(
   ignorerUserId: string,
   targetUserId: string,
 ): Promise<ToggleIgnoreResult> {
+  const block = await moderationService.getWriteBlock(ignorerUserId);
+  if (block.blocked) {
+    return { ok: false, error: "banned", reason: block.reason };
+  }
+
   if (ignorerUserId === targetUserId) {
     return { ok: false, error: "self" };
   }

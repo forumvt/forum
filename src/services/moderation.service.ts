@@ -94,7 +94,15 @@ export async function listReports(params: {
 export async function createReport(
   reporterUserId: string,
   data: { targetType: ReportTargetType; targetId: string; reason: string },
-): Promise<{ ok: true } | { ok: false; error: "duplicate" | "invalid" }> {
+): Promise<
+  | { ok: true }
+  | { ok: false; error: "duplicate" | "invalid" | "banned"; reason?: string | null }
+> {
+  const block = await getWriteBlock(reporterUserId);
+  if (block.blocked) {
+    return { ok: false, error: "banned", reason: block.reason };
+  }
+
   const reason = data.reason.trim();
   if (reason.length < 3 || reason.length > 500) {
     return { ok: false, error: "invalid" };
@@ -163,6 +171,9 @@ export async function setUserBan(
     return { ok: false, error: "forbidden" };
   }
   await userRepo.setBan(targetUserId, banned, reason);
+  if (banned) {
+    await userRepo.deleteSessionsByUserId(targetUserId);
+  }
   await moderationRepo.writeLog({
     actorUserId: actor.id,
     action: banned ? "ban" : "unban",
@@ -187,6 +198,7 @@ export async function setUserRole(
   const target = await userRepo.findPublicById(targetUserId);
   if (!target) return { ok: false, error: "not_found" };
   await userRepo.setRole(targetUserId, nextRole);
+  await userRepo.deleteSessionsByUserId(targetUserId);
   await moderationRepo.writeLog({
     actorUserId: actor.id,
     action: "role_change",

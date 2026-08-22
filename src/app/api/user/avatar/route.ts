@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { requireSessionUser } from "@/lib/staff-guard";
 import * as userRepo from "@/repositories/user.repository";
+import * as moderationService from "@/services/moderation.service";
 
 const DEFAULT_USER_IMAGE = "https://www.subeiros.com/eris-apple.png";
 
@@ -20,6 +21,14 @@ function isCloudinaryHttpsUrl(value: unknown): value is string {
 export async function POST(request: Request) {
   const session = await requireSessionUser();
   if (!session.ok) return session.response;
+
+  const block = await moderationService.getWriteBlock(session.userId);
+  if (block.blocked) {
+    return NextResponse.json(
+      { error: "Conta suspensa", reason: block.reason },
+      { status: 403 },
+    );
+  }
 
   let body: unknown;
   try {
@@ -52,6 +61,14 @@ export async function POST(request: Request) {
 export async function DELETE() {
   const session = await requireSessionUser();
   if (!session.ok) return session.response;
+
+  const block = await moderationService.getWriteBlock(session.userId);
+  if (block.blocked) {
+    return NextResponse.json(
+      { error: "Conta suspensa", reason: block.reason },
+      { status: 403 },
+    );
+  }
 
   try {
     await userRepo.updateAvatar(session.userId, DEFAULT_USER_IMAGE);

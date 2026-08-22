@@ -3,6 +3,7 @@ import {
   canDeleteThread,
   canEditPost,
   canModerateContent,
+  isStaff,
 } from "@/lib/permissions";
 import {
   excerptAroundMatch,
@@ -149,7 +150,9 @@ export async function getThreadBySlug(
 export async function getThreadForApi(
   slug: string,
 ): Promise<ThreadBySlug | null> {
-  return threadRepo.findBySlug(slug);
+  const thread = await threadRepo.findBySlug(slug);
+  if (!thread || thread.deletedAt) return null;
+  return thread;
 }
 
 export async function createThread(data: {
@@ -186,13 +189,18 @@ export async function incrementThreadViews(threadId: string): Promise<void> {
 
 export type UpdateOriginalPostResult =
   | { ok: true; updatedAt: Date }
-  | { ok: false; error: "not_found" | "forbidden" };
+  | { ok: false; error: "not_found" | "forbidden" | "banned"; reason?: string | null };
 
 export async function updateOriginalPost(
   slug: string,
   description: string,
   actor: { id: string; role?: string },
 ): Promise<UpdateOriginalPostResult> {
+  const block = await moderationService.getWriteBlock(actor.id);
+  if (block.blocked) {
+    return { ok: false, error: "banned", reason: block.reason };
+  }
+
   const thread = await threadRepo.findBySlug(slug);
   if (!thread || thread.deletedAt) return { ok: false, error: "not_found" };
   if (!canEditPost(actor.id, actor.role, thread.userId)) {
@@ -244,7 +252,11 @@ export type ModerateThreadAction =
 
 export type ModerateThreadResult =
   | { ok: true }
-  | { ok: false; error: "not_found" | "forbidden" | "invalid" };
+  | {
+      ok: false;
+      error: "not_found" | "forbidden" | "invalid" | "banned";
+      reason?: string | null;
+    };
 
 export async function moderateThread(
   slug: string,
@@ -257,6 +269,12 @@ export async function moderateThread(
   if (payload.action === "delete") {
     if (!canDeleteThread(actor.id, actor.role, thread.userId)) {
       return { ok: false, error: "forbidden" };
+    }
+    if (!isStaff(actor.role)) {
+      const block = await moderationService.getWriteBlock(actor.id);
+      if (block.blocked) {
+        return { ok: false, error: "banned", reason: block.reason };
+      }
     }
     await threadRepo.softDelete(thread.id);
     await moderationService.logAction({

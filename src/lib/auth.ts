@@ -10,6 +10,15 @@ import {
   normalizeEmailStripBrDomain,
   validateRegistrationCredentials,
 } from "@/lib/register-validation";
+import * as userRepo from "@/repositories/user.repository";
+
+const betterAuthSecret = process.env.BETTER_AUTH_SECRET;
+
+if (!betterAuthSecret) {
+  throw new Error(
+    "BETTER_AUTH_SECRET não está definida. Defina no .env local ou nas variáveis de ambiente do deploy (incluindo a fase de build, ex.: Vercel).",
+  );
+}
 
 const authBaseUrl =
   process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "";
@@ -35,6 +44,7 @@ const DEFAULT_USER_IMAGE =
   "https://www.subeiros.com/eris-apple.png";
 
 export const auth = betterAuth({
+  secret: betterAuthSecret,
   baseURL: authBaseUrl || undefined,
   ...(trustedOrigins.length > 0 ? { trustedOrigins } : {}),
   ...(cookieDomain
@@ -54,6 +64,18 @@ export const auth = betterAuth({
         const body = ctx.body as { email?: unknown };
         if (typeof body.email === "string") {
           body.email = normalizeEmailStripBrDomain(body.email);
+        }
+      }
+      if (ctx.path === "/sign-in/email") {
+        const body = ctx.body as { email?: unknown };
+        const email = typeof body.email === "string" ? body.email : "";
+        if (email) {
+          const ban = await userRepo.findBanByEmail(email);
+          if (ban?.bannedAt) {
+            throw new APIError("FORBIDDEN", {
+              message: "Conta suspensa",
+            });
+          }
         }
       }
       if (ctx.path !== "/sign-up/email") {

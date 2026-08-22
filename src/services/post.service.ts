@@ -96,13 +96,18 @@ export async function getPostsByThreadId(
 
 export type UpdatePostResult =
   | { ok: true; updatedAt: Date }
-  | { ok: false; error: "not_found" | "forbidden" };
+  | { ok: false; error: "not_found" | "forbidden" | "banned"; reason?: string | null };
 
 export async function updatePostContent(
   postId: string,
   content: string,
   actor: { id: string; role?: string },
 ): Promise<UpdatePostResult> {
+  const block = await moderationService.getWriteBlock(actor.id);
+  if (block.blocked) {
+    return { ok: false, error: "banned", reason: block.reason };
+  }
+
   const post = await postRepo.findById(postId);
   if (!post || post.deletedAt) return { ok: false, error: "not_found" };
   if (!canEditPost(actor.id, actor.role, post.userId)) {
@@ -152,12 +157,17 @@ export async function changePostAuthor(
 
 export type DeletePostResult =
   | { ok: true }
-  | { ok: false; error: "not_found" | "forbidden" };
+  | { ok: false; error: "not_found" | "forbidden" | "banned"; reason?: string | null };
 
 export async function deletePost(
   postId: string,
   actor: { id: string; role?: string },
 ): Promise<DeletePostResult> {
+  const block = await moderationService.getWriteBlock(actor.id);
+  if (block.blocked) {
+    return { ok: false, error: "banned", reason: block.reason };
+  }
+
   const post = await postRepo.findById(postId);
   if (!post || post.deletedAt) return { ok: false, error: "not_found" };
   if (!canDeletePost(actor.id, actor.role, post.userId)) {

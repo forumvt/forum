@@ -399,9 +399,8 @@ function parseOpenTag(
       if (!id) {
         return { node: { type: "text", content: inner }, pos: close.after };
       }
-      const url = inner.startsWith("http")
-        ? inner
-        : `https://twitter.com/i/status/${id}`;
+      const host = /x\.com/i.test(inner) ? "x.com" : "twitter.com";
+      const url = `https://${host}/i/status/${id}`;
       return { node: { type: "twitter", id, url }, pos: close.after };
     }
     case "list": {

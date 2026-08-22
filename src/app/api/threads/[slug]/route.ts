@@ -59,6 +59,12 @@ export async function PATCH(
   );
 
   if (!result.ok) {
+    if (result.error === "banned") {
+      return NextResponse.json(
+        { error: "Conta suspensa", reason: result.reason },
+        { status: 403 },
+      );
+    }
     if (result.error === "not_found") {
       return NextResponse.json({ error: "Thread not found" }, { status: 404 });
     }

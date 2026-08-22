@@ -1,18 +1,26 @@
 import * as likeRepo from "@/repositories/like.repository";
 import * as postRepo from "@/repositories/post.repository";
 import * as threadRepo from "@/repositories/thread.repository";
+import * as moderationService from "@/services/moderation.service";
 import * as notificationService from "@/services/notification.service";
 
 export type ToggleLikeResult =
   | { ok: true; liked: boolean }
-  | { ok: false; error: "not_found" };
+  | { ok: false; error: "not_found" | "banned"; reason?: string | null };
 
 export async function togglePostLike(
   postId: string,
   actorUserId: string,
 ): Promise<ToggleLikeResult> {
+  const block = await moderationService.getWriteBlock(actorUserId);
+  if (block.blocked) {
+    return { ok: false, error: "banned", reason: block.reason };
+  }
+
   const post = await postRepo.findById(postId);
-  if (!post) return { ok: false, error: "not_found" };
+  if (!post || post.deletedAt) return { ok: false, error: "not_found" };
+  const thread = await threadRepo.findMetaById(post.threadId);
+  if (!thread || thread.deletedAt) return { ok: false, error: "not_found" };
 
   const { liked } = await likeRepo.togglePostLike(postId, actorUserId);
 
@@ -39,8 +47,13 @@ export async function toggleThreadLike(
   slug: string,
   actorUserId: string,
 ): Promise<ToggleLikeResult> {
+  const block = await moderationService.getWriteBlock(actorUserId);
+  if (block.blocked) {
+    return { ok: false, error: "banned", reason: block.reason };
+  }
+
   const thread = await threadRepo.findBySlug(slug);
-  if (!thread) return { ok: false, error: "not_found" };
+  if (!thread || thread.deletedAt) return { ok: false, error: "not_found" };
 
   const { liked } = await likeRepo.toggleThreadLike(thread.id, actorUserId);
 

@@ -1,7 +1,13 @@
 import { and, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 
 import { db } from "@/db";
-import { forumTable, postTable, threadTable, userTable } from "@/db/schema";
+import {
+  forumTable,
+  postTable,
+  sessionTable,
+  threadTable,
+  userTable,
+} from "@/db/schema";
 import type { UserRole } from "@/lib/permissions";
 import type { AdminUserItem } from "@/types/moderation";
 import type { UserThreadItem } from "@/types/user";
@@ -232,6 +238,24 @@ export async function findBanById(
     .where(eq(userTable.id, userId))
     .limit(1);
   return row ?? null;
+}
+
+export async function findBanByEmail(
+  email: string,
+): Promise<{ bannedAt: Date | null; banReason: string | null } | null> {
+  const [row] = await db
+    .select({
+      bannedAt: userTable.bannedAt,
+      banReason: userTable.banReason,
+    })
+    .from(userTable)
+    .where(eq(userTable.email, email))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function deleteSessionsByUserId(userId: string): Promise<void> {
+  await db.delete(sessionTable).where(eq(sessionTable.userId, userId));
 }
 
 export async function setBan(

@@ -20,6 +20,12 @@ export async function POST(
   const result = await likeService.togglePostLike(id, session.user.id);
 
   if (!result.ok) {
+    if (result.error === "banned") {
+      return NextResponse.json(
+        { error: "Conta suspensa", reason: result.reason },
+        { status: 403 },
+      );
+    }
     return NextResponse.json({ error: "Post not found" }, { status: 404 });
   }
 

@@ -1,15 +1,21 @@
 import * as subscriptionRepo from "@/repositories/subscription.repository";
 import * as userRepo from "@/repositories/user.repository";
+import * as moderationService from "@/services/moderation.service";
 import type { SubscribedUser } from "@/types/user";
 
 export type ToggleSubscribeResult =
   | { ok: true; subscribed: boolean; subscriberCount: number }
-  | { ok: false; error: "not_found" | "self" };
+  | { ok: false; error: "not_found" | "self" | "banned"; reason?: string | null };
 
 export async function toggleSubscribe(
   subscriberUserId: string,
   targetUserId: string,
 ): Promise<ToggleSubscribeResult> {
+  const block = await moderationService.getWriteBlock(subscriberUserId);
+  if (block.blocked) {
+    return { ok: false, error: "banned", reason: block.reason };
+  }
+
   if (subscriberUserId === targetUserId) {
     return { ok: false, error: "self" };
   }

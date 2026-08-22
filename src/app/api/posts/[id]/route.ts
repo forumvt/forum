@@ -38,6 +38,12 @@ export async function PATCH(
   );
 
   if (!result.ok) {
+    if (result.error === "banned") {
+      return NextResponse.json(
+        { error: "Conta suspensa", reason: result.reason },
+        { status: 403 },
+      );
+    }
     if (result.error === "not_found") {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
@@ -66,6 +72,12 @@ export async function DELETE(
   const result = await postService.deletePost(id, actor);
 
   if (!result.ok) {
+    if (result.error === "banned") {
+      return NextResponse.json(
+        { error: "Conta suspensa", reason: result.reason },
+        { status: 403 },
+      );
+    }
     if (result.error === "not_found") {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }

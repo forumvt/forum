@@ -268,6 +268,7 @@ export async function searchPaginated(
     SELECT 1 FROM ${postTable}
     WHERE ${postTable.threadId} = ${threadTable.id}
       AND ${postTable.content} ILIKE ${pattern}
+      AND ${postTable.deletedAt} IS NULL
   )`;
 
   const searchWhere = or(
@@ -290,6 +291,7 @@ export async function searchPaginated(
         FROM post mp
         WHERE mp.thread_id = ${threadTable.id}
           AND mp.content ILIKE ${pattern}
+          AND mp.deleted_at IS NULL
         ORDER BY mp.created_at ASC
         LIMIT 1
       )

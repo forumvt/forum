@@ -25,6 +25,12 @@ export async function POST(request: Request) {
     validation.data,
   );
   if (!result.ok) {
+    if (result.error === "banned") {
+      return NextResponse.json(
+        { error: "Conta suspensa", reason: result.reason },
+        { status: 403 },
+      );
+    }
     if (result.error === "duplicate") {
       return NextResponse.json(
         { error: "Você já denunciou este conteúdo." },

@@ -2,6 +2,7 @@ import { v2 as cloudinary } from "cloudinary";
 import { NextResponse } from "next/server";
 
 import { requireSessionUser } from "@/lib/staff-guard";
+import * as moderationService from "@/services/moderation.service";
 
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
@@ -18,6 +19,14 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 export async function POST(request: Request) {
   const session = await requireSessionUser();
   if (!session.ok) return session.response;
+
+  const block = await moderationService.getWriteBlock(session.userId);
+  if (block.blocked) {
+    return NextResponse.json(
+      { error: "Conta suspensa", reason: block.reason },
+      { status: 403 },
+    );
+  }
 
   const secret = process.env.CLOUDINARY_API_SECRET;
   if (!secret) {

@@ -23,6 +23,12 @@ export async function POST(
   );
 
   if (!result.ok) {
+    if (result.error === "banned") {
+      return NextResponse.json(
+        { error: "Conta suspensa", reason: result.reason },
+        { status: 403 },
+      );
+    }
     if (result.error === "self") {
       return NextResponse.json(
         { error: "Não é possível ignorar a si mesmo" },
