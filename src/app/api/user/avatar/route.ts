@@ -1,22 +1,65 @@
-import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
+import { requireSessionUser } from "@/lib/staff-guard";
 import * as userRepo from "@/repositories/user.repository";
 
-export async function POST(req: NextRequest) {
+const DEFAULT_USER_IMAGE = "https://www.subeiros.com/eris-apple.png";
+
+function isCloudinaryHttpsUrl(value: unknown): value is string {
+  if (typeof value !== "string") return false;
   try {
-    const { image, userId } = await req.json();
+    const parsed = new URL(value);
+    if (parsed.protocol !== "https:") return false;
+    const host = parsed.hostname.toLowerCase();
+    return host === "res.cloudinary.com" || host.endsWith(".cloudinary.com");
+  } catch {
+    return false;
+  }
+}
 
-    if (!image || !userId) {
-      return Response.json({ error: "Parâmetros faltando" }, { status: 400 });
-    }
+export async function POST(request: Request) {
+  const session = await requireSessionUser();
+  if (!session.ok) return session.response;
 
-    await userRepo.updateAvatar(userId, image);
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Parâmetros faltando" }, { status: 400 });
+  }
 
-    return Response.json({ ok: true });
+  const image =
+    typeof body === "object" && body !== null && "image" in body
+      ? (body as { image: unknown }).image
+      : undefined;
+
+  if (!isCloudinaryHttpsUrl(image)) {
+    return NextResponse.json({ error: "URL de imagem inválida" }, { status: 400 });
+  }
+
+  try {
+    await userRepo.updateAvatar(session.userId, image);
+    return NextResponse.json({ ok: true });
   } catch (error) {
     console.error(error);
-    return Response.json(
+    return NextResponse.json(
       { error: "Falha ao atualizar avatar" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE() {
+  const session = await requireSessionUser();
+  if (!session.ok) return session.response;
+
+  try {
+    await userRepo.updateAvatar(session.userId, DEFAULT_USER_IMAGE);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: "Falha ao remover o avatar" },
       { status: 500 },
     );
   }

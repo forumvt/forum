@@ -29,7 +29,7 @@ export function AvatarSettings({ user }: AvatarSettingsProps) {
       const res = await fetch("/api/user/avatar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: secureUrl, userId: user.id }),
+        body: JSON.stringify({ image: secureUrl }),
       });
 
       if (!res.ok) throw new Error("Falha ao salvar avatar no banco");
@@ -44,9 +44,10 @@ export function AvatarSettings({ user }: AvatarSettingsProps) {
 
   const handleRemoveAvatar = async () => {
     try {
-      await fetch("/api/user/avatar", {
+      const res = await fetch("/api/user/avatar", {
         method: "DELETE",
       });
+      if (!res.ok) throw new Error("Falha ao remover o avatar");
 
       setPreviewUrl(null);
       toast.success("Avatar removido com sucesso!");
@@ -79,8 +80,7 @@ export function AvatarSettings({ user }: AvatarSettingsProps) {
                 typeof result.info === "object" &&
                 "secure_url" in result.info
               ) {
-                console.log("Imagem enviada:", result.info.secure_url);
-                handleUpload(result.info.secure_url as string); // função que salva no banco
+                handleUpload(result.info.secure_url as string);
               } else {
                 console.error("Upload result missing secure_url");
                 toast.error("Erro no upload: URL da imagem não encontrada");
