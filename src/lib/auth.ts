@@ -127,12 +127,6 @@ Se você não solicitou, ignore este e-mail.`,
       });
     },
   },
-  socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-    },
-  },
   database: drizzleAdapter(db, {
     provider: "pg", // or "mysql", "sqlite"
     schema,
