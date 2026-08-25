@@ -25,6 +25,7 @@ export type {
 } from "./thread";
 export type {
   IgnoredUser,
+  SignatureSettings,
   SubscribedUser,
   UserIdentity,
   UserPostItem,

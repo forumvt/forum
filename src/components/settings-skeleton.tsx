@@ -20,6 +20,15 @@ export function SettingsSkeleton() {
       </div>
 
       <div className="border-border bg-card rounded-lg border p-6">
+        <Skeleton className="mb-4 h-7 w-32" />
+        <div className="space-y-3">
+          <Skeleton className="h-5 w-72" />
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="ml-auto h-9 w-40" />
+        </div>
+      </div>
+
+      <div className="border-border bg-card rounded-lg border p-6">
         <Skeleton className="mb-4 h-7 w-24" />
         <div className="space-y-3">
           <Skeleton className="h-5 w-64" />

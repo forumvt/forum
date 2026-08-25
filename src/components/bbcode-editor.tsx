@@ -46,6 +46,7 @@ export interface BBCodeEditorProps {
   minHeightClass?: string;
   disabled?: boolean;
   name?: string;
+  compact?: boolean;
 }
 
 export function BBCodeEditor({
@@ -56,6 +57,7 @@ export function BBCodeEditor({
   minHeightClass = "min-h-[150px]",
   disabled,
   name,
+  compact,
 }: BBCodeEditorProps) {
   const innerRef = useRef<HTMLTextAreaElement | null>(null);
   const [showHelp, setShowHelp] = useState(false);
@@ -306,7 +308,7 @@ export function BBCodeEditor({
             )}
           >
             {value.trim() ? (
-              <BBCodeContent content={value} />
+              <BBCodeContent content={value} compact={compact} />
             ) : (
               <p className="text-muted-foreground text-sm">
                 Nada para pré-visualizar ainda.

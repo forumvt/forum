@@ -5,10 +5,12 @@ import { Suspense } from "react"
 import { AvatarSettings } from "@/components/avatar-settings"
 import { NotificationSettings } from "@/components/notification-settings"
 import { SettingsSkeleton } from "@/components/settings-skeleton"
+import { SignatureSettingsForm } from "@/components/signature-settings"
 import { Button } from "@/components/ui/button"
 import { userProfilePath } from "@/lib/app-url"
 import { auth } from "@/lib/auth"
 import * as notificationService from "@/services/notification.service"
+import * as userService from "@/services/user.service"
 
 async function SettingsContent() {
   const session = await auth.api.getSession({
@@ -19,7 +21,10 @@ async function SettingsContent() {
     redirect("/")
   }
 
-  const preferences = await notificationService.getPreferences(session.user.id)
+  const [preferences, signatureSettings] = await Promise.all([
+    notificationService.getPreferences(session.user.id),
+    userService.getSignatureSettings(session.user.id),
+  ])
 
   return (
     <>
@@ -40,6 +45,15 @@ async function SettingsContent() {
       <div className="border-border bg-card rounded-lg border p-6">
         <h2 className="mb-4 text-xl font-semibold">Avatar</h2>
         <AvatarSettings user={session.user} />
+      </div>
+
+      <div className="border-border bg-card rounded-lg border p-6">
+        <h2 className="mb-1 text-xl font-semibold">Assinatura</h2>
+        <p className="text-muted-foreground mb-4 text-sm">
+          Texto exibido abaixo das suas mensagens no desktop. No celular as
+          assinaturas não aparecem.
+        </p>
+        <SignatureSettingsForm initialSettings={signatureSettings} />
       </div>
 
       <div className="border-border bg-card rounded-lg border p-6">

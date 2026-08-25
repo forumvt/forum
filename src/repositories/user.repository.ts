@@ -20,6 +20,7 @@ export interface PublicUserRow {
   createdAt: Date;
   bannedAt: Date | null;
   banReason: string | null;
+  signature: string | null;
 }
 
 function uniqueIds(ids: string[]): string[] {
@@ -34,6 +35,27 @@ export async function updateAvatar(
     .update(userTable)
     .set({ image: imageUrl })
     .where(eq(userTable.id, userId));
+}
+
+export async function findSignatureSettings(
+  userId: string,
+): Promise<{ signature: string | null; showSignatures: boolean } | null> {
+  const [row] = await db
+    .select({
+      signature: userTable.signature,
+      showSignatures: userTable.showSignatures,
+    })
+    .from(userTable)
+    .where(eq(userTable.id, userId))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function updateSignatureSettings(
+  userId: string,
+  data: { signature?: string | null; showSignatures?: boolean },
+): Promise<void> {
+  await db.update(userTable).set(data).where(eq(userTable.id, userId));
 }
 
 export async function findRoleById(
@@ -59,6 +81,7 @@ export async function findPublicById(
       createdAt: userTable.createdAt,
       bannedAt: userTable.bannedAt,
       banReason: userTable.banReason,
+      signature: userTable.signature,
     })
     .from(userTable)
     .where(eq(userTable.id, userId))
@@ -81,6 +104,7 @@ export async function findPublicByIds(
       createdAt: userTable.createdAt,
       bannedAt: userTable.bannedAt,
       banReason: userTable.banReason,
+      signature: userTable.signature,
     })
     .from(userTable)
     .where(inArray(userTable.id, ids));

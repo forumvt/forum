@@ -1,5 +1,12 @@
 import type { UserRole } from "@/lib/permissions";
 
+export const SIGNATURE_MAX_LENGTH = 500;
+
+export interface SignatureSettings {
+  signature: string;
+  showSignatures: boolean;
+}
+
 export interface UserIdentity {
   id: string;
   name: string;
@@ -8,6 +15,7 @@ export interface UserIdentity {
   createdAt: Date;
   postsCount: number;
   likesReceived: number;
+  signature: string | null;
 }
 
 export interface UserProfile extends UserIdentity {

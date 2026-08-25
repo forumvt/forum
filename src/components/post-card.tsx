@@ -512,7 +512,14 @@ export function PostCard({
               {post.timestamp}
             </span>
           </div>
-          <div className="flex-1 p-4">{body}</div>
+          <div className="flex-1 p-4">
+            {body}
+            {!editing && !post.isDeleted && post.signature?.trim() ? (
+              <div className="border-border mt-4 border-t pt-3 text-sm">
+                <BBCodeContent content={post.signature} compact />
+              </div>
+            ) : null}
+          </div>
           {!editing && (
             <div className="border-border mt-auto border-t px-4 py-3">
               {actions}

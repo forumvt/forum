@@ -23,6 +23,8 @@ export const userTable = pgTable("user", {
   image: text("image")
     .$type<string | null>()
     .default("https://www.subeiros.com/eris-apple.png"),
+  signature: text("signature"),
+  showSignatures: boolean("show_signatures").notNull().default(true),
   role: roleEnum("role").notNull().default("USER"),
   bannedAt: timestamp("banned_at"),
   banReason: text("ban_reason"),

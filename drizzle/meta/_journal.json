@@ -36,6 +36,13 @@
       "when": 1776900000000,
       "tag": "0005_moderation",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1777000000000,
+      "tag": "0006_user_signature",
+      "breakpoints": true
     }
   ]
 }

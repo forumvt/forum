@@ -36,24 +36,42 @@ function groupNodes(
   return groups;
 }
 
-function InlineNodes({ nodes }: { nodes: BBCodeNode[] }) {
+function InlineNodes({
+  nodes,
+  compact,
+}: {
+  nodes: BBCodeNode[];
+  compact?: boolean;
+}) {
   return (
     <>
       {nodes.map((node, index) => (
-        <BBCodeNodeView key={index} node={node} />
+        <BBCodeNodeView key={index} node={node} compact={compact} />
       ))}
     </>
   );
 }
 
-function NodeChildren({ nodes }: { nodes: BBCodeNode[] }) {
+function NodeChildren({
+  nodes,
+  compact,
+}: {
+  nodes: BBCodeNode[];
+  compact?: boolean;
+}) {
   const groups = groupNodes(nodes);
 
   return (
     <>
       {groups.map((group, index) => {
         if (group.kind === "block") {
-          return <BBCodeNodeView key={index} node={group.node} />;
+          return (
+            <BBCodeNodeView
+              key={index}
+              node={group.node}
+              compact={compact}
+            />
+          );
         }
         const onlyWhitespace = group.nodes.every(
           (n) => n.type === "text" && n.content.trim() === "",
@@ -64,7 +82,7 @@ function NodeChildren({ nodes }: { nodes: BBCodeNode[] }) {
             key={index}
             className="text-foreground break-words whitespace-pre-wrap"
           >
-            <InlineNodes nodes={group.nodes} />
+            <InlineNodes nodes={group.nodes} compact={compact} />
           </p>
         );
       })}
@@ -77,47 +95,83 @@ function InlineWrap({
   className,
   style,
   as: Tag = "span",
+  compact,
 }: {
   node: Extract<BBCodeNode, { children: BBCodeNode[] }>;
   className?: string;
   style?: CSSProperties;
   as?: "span" | "strong" | "em" | "u" | "s" | "div";
+  compact?: boolean;
 }) {
   if (hasBlockChild(node.children)) {
     return (
       <div className={className} style={style}>
-        <NodeChildren nodes={node.children} />
+        <NodeChildren nodes={node.children} compact={compact} />
       </div>
     );
   }
 
   return (
     <Tag className={className} style={style}>
-      <InlineNodes nodes={node.children} />
+      <InlineNodes nodes={node.children} compact={compact} />
     </Tag>
   );
 }
 
-function BBCodeNodeView({ node }: { node: BBCodeNode }) {
+function BBCodeNodeView({
+  node,
+  compact,
+}: {
+  node: BBCodeNode;
+  compact?: boolean;
+}) {
   switch (node.type) {
     case "text":
       return <>{node.content}</>;
     case "bold":
-      return <InlineWrap node={node} as="strong" className="font-bold" />;
+      return (
+        <InlineWrap
+          node={node}
+          as="strong"
+          className="font-bold"
+          compact={compact}
+        />
+      );
     case "italic":
-      return <InlineWrap node={node} as="em" className="italic" />;
+      return (
+        <InlineWrap
+          node={node}
+          as="em"
+          className="italic"
+          compact={compact}
+        />
+      );
     case "underline":
-      return <InlineWrap node={node} as="u" className="underline" />;
+      return (
+        <InlineWrap
+          node={node}
+          as="u"
+          className="underline"
+          compact={compact}
+        />
+      );
     case "strike":
-      return <InlineWrap node={node} as="s" className="line-through" />;
+      return (
+        <InlineWrap
+          node={node}
+          as="s"
+          className="line-through"
+          compact={compact}
+        />
+      );
     case "url":
       if (!node.href) {
-        return <InlineWrap node={node} />;
+        return <InlineWrap node={node} compact={compact} />;
       }
       if (hasBlockChild(node.children)) {
         return (
           <div>
-            <NodeChildren nodes={node.children} />
+            <NodeChildren nodes={node.children} compact={compact} />
           </div>
         );
       }
@@ -128,7 +182,7 @@ function BBCodeNodeView({ node }: { node: BBCodeNode }) {
           rel="noopener noreferrer"
           className="text-primary break-all underline-offset-2 hover:underline"
         >
-          <InlineNodes nodes={node.children} />
+          <InlineNodes nodes={node.children} compact={compact} />
         </a>
       );
     case "color":
@@ -136,6 +190,7 @@ function BBCodeNodeView({ node }: { node: BBCodeNode }) {
         <InlineWrap
           node={node}
           style={node.color ? { color: node.color } : undefined}
+          compact={compact}
         />
       );
     case "size":
@@ -143,6 +198,7 @@ function BBCodeNodeView({ node }: { node: BBCodeNode }) {
         <InlineWrap
           node={node}
           style={node.size ? { fontSize: `${node.size}px` } : undefined}
+          compact={compact}
         />
       );
     case "code":
@@ -164,9 +220,9 @@ function BBCodeNodeView({ node }: { node: BBCodeNode }) {
           {node.items.map((item, index) => (
             <li key={index} className="break-words">
               {hasBlockChild(item) ? (
-                <NodeChildren nodes={item} />
+                <NodeChildren nodes={item} compact={compact} />
               ) : (
-                <InlineNodes nodes={item} />
+                <InlineNodes nodes={item} compact={compact} />
               )}
             </li>
           ))}
@@ -180,14 +236,14 @@ function BBCodeNodeView({ node }: { node: BBCodeNode }) {
             Spoiler
           </summary>
           <div className="mt-2 space-y-2">
-            <NodeChildren nodes={node.children} />
+            <NodeChildren nodes={node.children} compact={compact} />
           </div>
         </details>
       );
     case "center":
       return (
         <div className="space-y-2 text-center">
-          <NodeChildren nodes={node.children} />
+          <NodeChildren nodes={node.children} compact={compact} />
         </div>
       );
     case "quote":
@@ -197,17 +253,27 @@ function BBCodeNodeView({ node }: { node: BBCodeNode }) {
             {node.username ? `${node.username}:` : "Quote:"}
           </div>
           <div className="text-muted-foreground space-y-2 p-4 pt-2 break-words">
-            <NodeChildren nodes={node.children} />
+            <NodeChildren nodes={node.children} compact={compact} />
           </div>
         </div>
       );
     case "image":
       return (
-        <div className="border-border overflow-hidden rounded-lg border shadow-md">
+        <div
+          className={
+            compact
+              ? "border-border inline-block overflow-hidden rounded border"
+              : "border-border overflow-hidden rounded-lg border shadow-md"
+          }
+        >
           <img
             src={node.url}
             alt="Imagem anexada"
-            className="h-auto w-full object-contain"
+            className={
+              compact
+                ? "h-auto max-h-[350px] w-auto max-w-[500px] object-contain"
+                : "h-auto w-full object-contain"
+            }
           />
         </div>
       );
@@ -249,7 +315,13 @@ function BBCodeNodeView({ node }: { node: BBCodeNode }) {
   }
 }
 
-export function BBCodeContent({ content }: { content: string }) {
+export function BBCodeContent({
+  content,
+  compact,
+}: {
+  content: string;
+  compact?: boolean;
+}) {
   const nodes = parseBBCode(content);
 
   if (nodes.length === 0) {
@@ -258,7 +330,7 @@ export function BBCodeContent({ content }: { content: string }) {
 
   return (
     <div className="min-w-0 space-y-3">
-      <NodeChildren nodes={nodes} />
+      <NodeChildren nodes={nodes} compact={compact} />
     </div>
   );
 }

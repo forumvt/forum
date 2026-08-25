@@ -73,7 +73,7 @@ export default async function ThreadPage({
   const sessionUserId = session?.user?.id ?? null;
   const staffViewer = isStaff(actor?.role);
 
-  const [threadLikes, postLikes, identities, ignoredUserIds, forums] =
+  const [threadLikes, postLikes, identities, ignoredUserIds, forums, showSignatures] =
     await Promise.all([
       likeRepo.findThreadLikeStats(thread.id, sessionUserId),
       likeRepo.findPostLikeStats(
@@ -86,6 +86,7 @@ export default async function ThreadPage({
       ]),
       ignoreService.getIgnoredUserIdSet(sessionUserId),
       forumService.listForums(),
+      userService.viewerShowsSignatures(sessionUserId),
     ]);
 
   function identityFields(identity: UserIdentity | undefined) {
@@ -95,6 +96,15 @@ export default async function ThreadPage({
       posts: (identity?.postsCount ?? 0).toLocaleString("pt-BR"),
       likes: (identity?.likesReceived ?? 0).toLocaleString("pt-BR"),
     };
+  }
+
+  function postSignature(
+    identity: UserIdentity | undefined,
+    isDeleted: boolean,
+  ): string | undefined {
+    if (!showSignatures || isDeleted) return undefined;
+    const signature = identity?.signature?.trim();
+    return signature || undefined;
   }
 
   const threadIdentity = identities.get(thread.userId);
@@ -109,7 +119,7 @@ export default async function ThreadPage({
     timestamp: new Date(thread.createdAt).toLocaleString(),
     isOriginalPoster: true,
     userAvatar: thread.userAvatar,
-    signature: "",
+    signature: postSignature(threadIdentity, Boolean(thread.deletedAt)),
     userId: thread.userId,
     createdAt: thread.createdAt.toISOString(),
     updatedAt: thread.updatedAt.toISOString(),
@@ -132,7 +142,10 @@ export default async function ThreadPage({
         timestamp: new Date(post.createdAt).toLocaleString(),
         isOriginalPoster: post.userId === thread.userId,
         userAvatar: post.userAvatar,
-        signature: undefined,
+        signature: postSignature(
+          identities.get(post.userId),
+          Boolean(post.deletedAt),
+        ),
         userId: post.userId,
         createdAt: post.createdAt.toISOString(),
         updatedAt: post.updatedAt.toISOString(),

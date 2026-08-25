@@ -5,6 +5,7 @@ import * as userRepo from "@/repositories/user.repository";
 import * as ignoreService from "@/services/ignore.service";
 import * as subscriptionService from "@/services/subscription.service";
 import type {
+  SignatureSettings,
   UserIdentity,
   UserPostItem,
   UserPreview,
@@ -37,6 +38,7 @@ export async function getIdentityMap(
       createdAt: user.createdAt,
       postsCount: threadsCount + repliesCount,
       likesReceived: likeCounts.get(user.id) ?? 0,
+      signature: user.signature,
     });
   }
 
@@ -72,6 +74,7 @@ export async function getProfile(
     createdAt: user.createdAt,
     postsCount: threadsCount + repliesCount,
     likesReceived: likeCounts.get(userId) ?? 0,
+    signature: user.signature,
     threadsCount,
     repliesCount,
     subscriberCount: subStats.subscriberCount,
@@ -163,4 +166,40 @@ export async function listUserPosts(
     totalPages,
     currentPage,
   };
+}
+
+export async function getSignatureSettings(
+  userId: string,
+): Promise<SignatureSettings> {
+  const row = await userRepo.findSignatureSettings(userId);
+  return {
+    signature: row?.signature ?? "",
+    showSignatures: row?.showSignatures ?? true,
+  };
+}
+
+export async function saveSignatureSettings(
+  userId: string,
+  data: { signature?: string; showSignatures?: boolean },
+): Promise<SignatureSettings> {
+  const updates: { signature?: string | null; showSignatures?: boolean } = {};
+  if (data.signature !== undefined) {
+    const trimmed = data.signature.trim();
+    updates.signature = trimmed.length > 0 ? trimmed : null;
+  }
+  if (data.showSignatures !== undefined) {
+    updates.showSignatures = data.showSignatures;
+  }
+  if (Object.keys(updates).length > 0) {
+    await userRepo.updateSignatureSettings(userId, updates);
+  }
+  return getSignatureSettings(userId);
+}
+
+export async function viewerShowsSignatures(
+  userId: string | null | undefined,
+): Promise<boolean> {
+  if (!userId) return true;
+  const settings = await userRepo.findSignatureSettings(userId);
+  return settings?.showSignatures ?? true;
 }
