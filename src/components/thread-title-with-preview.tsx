@@ -22,6 +22,7 @@ export function ThreadTitleWithPreview({
   highlightQuery,
   isPinned,
   isLocked,
+  className,
 }: {
   title: string;
   description: string;
@@ -30,6 +31,7 @@ export function ThreadTitleWithPreview({
   highlightQuery?: string;
   isPinned?: boolean;
   isLocked?: boolean;
+  className?: string;
 }) {
   const preview =
     description.length > PREVIEW_MAX_LENGTH
@@ -49,6 +51,7 @@ export function ThreadTitleWithPreview({
               isUnread
                 ? "text-foreground font-bold"
                 : "text-muted-foreground font-normal",
+              className,
             )}
           >
             {isPinned || isLocked ? (

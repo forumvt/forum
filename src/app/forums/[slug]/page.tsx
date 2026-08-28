@@ -1,25 +1,19 @@
-import { Clock, Eye, MessageSquare, PlusIcon, User } from "lucide-react";
+import { Eye, MessageSquare, PlusIcon } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { ForumSkeleton } from "@/components/forum-skeleton";
-import {
-  IGNORED_THREAD_NOTICE,
-  IgnoredReveal,
-} from "@/components/ignored-reveal";
 import { ThreadFilters } from "@/components/thread-filters";
-import { ThreadTitleWithPreview } from "@/components/thread-title-with-preview";
+import { ThreadList, ThreadListItem } from "@/components/thread-list-item";
 import { ThreadsPagination } from "@/components/threads-pagination";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { UserAvatarLink, UserNameLink } from "@/components/user-link";
 import { auth } from "@/lib/auth";
 import * as forumService from "@/services/forum.service";
 import * as threadService from "@/services/thread.service";
 import type { FilterType } from "@/types/filters";
-import type { ThreadListItem } from "@/types/thread";
+import type { ThreadListItem as ThreadRow } from "@/types/thread";
 
 const DEFAULT_PER = 10;
 
@@ -69,7 +63,7 @@ async function ForumContent({
 
   const { threads, totalCount, totalPages, currentPage } = listResult;
   const totalMessages = threads.reduce(
-    (sum: number, t: ThreadListItem) => sum + t.postsCount,
+    (sum: number, t: ThreadRow) => sum + t.postsCount,
     0,
   );
 
@@ -131,109 +125,15 @@ async function ForumContent({
         </div>
       ) : (
         <div className="space-y-4">
-          {threads.map((thread) => (
-            <IgnoredReveal
-              key={thread.id}
-              ignored={thread.authorIgnored}
-              message={IGNORED_THREAD_NOTICE}
-            >
-              <Card className="chaos-card bg-card border-border transition-all duration-300 hover:shadow-lg border">
-                <div className="p-4 sm:p-6">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                    <div className="flex items-center gap-3 sm:flex-col sm:items-center">
-                      <UserAvatarLink
-                        userId={thread.userId}
-                        name={thread.userName}
-                        avatar={thread.userAvatar}
-                        className="h-10 w-10 sm:h-12 sm:w-12"
-                      />
-                      <div className="sm:hidden">
-                        <div className="text-muted-foreground flex items-center gap-1 text-xs">
-                          <User className="h-3 w-3" />
-                          <UserNameLink
-                            userId={thread.userId}
-                            name={thread.userName}
-                            className="font-medium text-foreground"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="w-full min-w-0 flex-1">
-                      <div className="mb-2">
-                        <ThreadTitleWithPreview
-                          title={thread.title}
-                          description={thread.description}
-                          slug={thread.slug}
-                          isUnread={thread.isUnread}
-                          isPinned={thread.isPinned}
-                          isLocked={thread.isLocked}
-                        />
-                      </div>
-                      <div className="text-muted-foreground flex flex-col gap-2 text-xs sm:flex-row sm:items-center sm:gap-3">
-                        <div className="hidden items-center gap-1 sm:flex">
-                          <User className="h-3 w-3" />
-                          <UserNameLink
-                            userId={thread.userId}
-                            name={thread.userName}
-                            className="font-medium text-foreground"
-                          />
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          <span>
-                            {new Date(thread.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                        {thread.postsCount > 0 && thread.lastPostAt && (
-                          <div className="flex items-center gap-1">
-                            <MessageSquare className="h-3 w-3" />
-                            <span>
-                              Última resposta
-                              {thread.lastPostUserName ? (
-                                <>
-                                  {" "}
-                                  por{" "}
-                                  <UserNameLink
-                                    userId={thread.lastPostUserId}
-                                    name={thread.lastPostUserName}
-                                    className="font-medium text-foreground"
-                                  />
-                                </>
-                              ) : null}{" "}
-                              em{" "}
-                              {new Date(thread.lastPostAt).toLocaleDateString(
-                                "pt-BR",
-                              )}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex shrink-0 flex-wrap items-center gap-3 text-sm">
-                      <div className="text-muted-foreground flex items-center gap-1">
-                        <MessageSquare className="h-4 w-4" />
-                        <span className="hidden sm:inline">Respostas:</span>
-                        <span className="sm:hidden">Resp:</span>
-                        <span className="text-foreground text-lg font-bold">
-                          {thread.postsCount}
-                        </span>
-                      </div>
-                      <div className="text-muted-foreground flex items-center gap-1">
-                        <Eye className="h-4 w-4" />
-                        <span className="hidden sm:inline">Visualizações:</span>
-                        <span className="sm:hidden">Views:</span>
-                        <span className="text-foreground text-lg font-bold">
-                          {thread.views}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </IgnoredReveal>
-          ))}
+          <ThreadList>
+            {threads.map((thread) => (
+              <ThreadListItem
+                key={thread.id}
+                thread={thread}
+                showViews
+              />
+            ))}
+          </ThreadList>
           <ThreadsPagination
             currentPage={currentPage}
             totalPages={totalPages}

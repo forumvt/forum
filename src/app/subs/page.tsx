@@ -1,15 +1,10 @@
-import { Clock, MessageSquare, User } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
-import {
-  IGNORED_THREAD_NOTICE,
-  IgnoredReveal,
-} from "@/components/ignored-reveal";
-import { ThreadTitleWithPreview } from "@/components/thread-title-with-preview";
+import { ThreadList, ThreadListItem } from "@/components/thread-list-item";
 import { ThreadsPagination } from "@/components/threads-pagination";
-import { Card } from "@/components/ui/card";
 import { UserAvatarLink, UserNameLink } from "@/components/user-link";
 import { auth } from "@/lib/auth";
 import * as subscriptionService from "@/services/subscription.service";
@@ -105,75 +100,11 @@ async function SubsFeed({
           </div>
         ) : (
           <div className="space-y-4">
-            {threads.map((thread) => (
-              <IgnoredReveal
-                key={thread.id}
-                ignored={thread.authorIgnored}
-                message={IGNORED_THREAD_NOTICE}
-              >
-                <Card className="chaos-card bg-card transition-all duration-300 hover:shadow-lg">
-                  <div className="p-4 sm:p-6">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                      <div className="flex items-center gap-3 sm:flex-col sm:items-center">
-                        <UserAvatarLink
-                          userId={thread.userId}
-                          name={thread.userName}
-                          avatar={thread.userAvatar}
-                          className="h-10 w-10 sm:h-12 sm:w-12"
-                        />
-                        <div className="sm:hidden">
-                          <div className="text-muted-foreground flex items-center gap-1 text-xs">
-                            <User className="h-3 w-3" />
-                            <UserNameLink
-                              userId={thread.userId}
-                              name={thread.userName}
-                              className="font-medium text-foreground"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="mb-2">
-                          <ThreadTitleWithPreview
-                            title={thread.title}
-                            description={thread.description}
-                            slug={thread.slug}
-                            isUnread={thread.isUnread}
-                            isPinned={thread.isPinned}
-                            isLocked={thread.isLocked}
-                          />
-                        </div>
-                        <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-                          <div className="hidden items-center gap-1 sm:flex">
-                            <User className="h-3 w-3" />
-                            <UserNameLink
-                              userId={thread.userId}
-                              name={thread.userName}
-                              className="font-medium text-foreground"
-                            />
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            <span>
-                              {new Date(thread.createdAt).toLocaleDateString(
-                                "pt-BR",
-                              )}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <MessageSquare className="h-3 w-3" />
-                            <span>
-                              {thread.postsCount.toLocaleString("pt-BR")}{" "}
-                              respostas
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </IgnoredReveal>
-            ))}
+            <ThreadList>
+              {threads.map((thread) => (
+                <ThreadListItem key={thread.id} thread={thread} />
+              ))}
+            </ThreadList>
             <ThreadsPagination
               currentPage={currentPage}
               totalPages={totalPages}
