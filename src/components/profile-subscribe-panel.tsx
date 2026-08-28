@@ -5,7 +5,8 @@ import { useState } from "react";
 
 import { IgnoreButton } from "@/components/ignore-button";
 import { SubButton } from "@/components/sub-button";
-import { userProfilePath } from "@/lib/app-url";
+import { Button } from "@/components/ui/button";
+import { pmNewPath, userProfilePath } from "@/lib/app-url";
 
 export function ProfileSubscribePanel({
   userId,
@@ -44,6 +45,9 @@ export function ProfileSubscribePanel({
             size="default"
             className="h-9 px-4 text-sm"
           />
+          <Button asChild size="default" variant="secondary" className="h-9 px-4 text-sm">
+            <Link href={pmNewPath(userId) as never}>Iniciar conversa</Link>
+          </Button>
         </>
       )}
       <Link

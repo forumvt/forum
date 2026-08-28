@@ -373,3 +373,63 @@ export const moderationLogTable = pgTable(
     createdIdx: index("moderation_log_created_idx").on(t.createdAt),
   }),
 );
+
+export const pmConversationTable = pgTable(
+  "pm_conversation",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userLowId: text("user_low_id").references(() => userTable.id, {
+      onDelete: "cascade",
+    }),
+    userHighId: text("user_high_id").references(() => userTable.id, {
+      onDelete: "cascade",
+    }),
+    lastMessageAt: timestamp("last_message_at").notNull().defaultNow(),
+    lastMessagePreview: text("last_message_preview"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    pairUnique: unique().on(t.userLowId, t.userHighId),
+    lastMessageIdx: index("pm_conversation_last_message_idx").on(
+      t.lastMessageAt,
+    ),
+  }),
+);
+
+export const pmParticipantTable = pgTable(
+  "pm_participant",
+  {
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => pmConversationTable.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    lastReadAt: timestamp("last_read_at"),
+  },
+  (t) => ({
+    pairUnique: unique().on(t.conversationId, t.userId),
+    userIdx: index("pm_participant_user_idx").on(t.userId),
+  }),
+);
+
+export const pmMessageTable = pgTable(
+  "pm_message",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => pmConversationTable.id, { onDelete: "cascade" }),
+    senderId: text("sender_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    conversationCreatedIdx: index("pm_message_conversation_created_idx").on(
+      t.conversationId,
+      t.createdAt,
+    ),
+  }),
+);

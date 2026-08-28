@@ -16,7 +16,7 @@ import { IgnoreButton } from "@/components/ignore-button";
 import { SubButton } from "@/components/sub-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { userProfilePath } from "@/lib/app-url";
+import { pmNewPath, userProfilePath } from "@/lib/app-url";
 import { authClient } from "@/lib/auth-client";
 import { patchUserPreview, userPreviewCache } from "@/lib/user-preview-cache";
 import { cn, displayUserName, formatJoinedOn, userInitials } from "@/lib/utils";
@@ -57,14 +57,12 @@ function placeCard(
   return { top, left };
 }
 
-function comingSoon(action: string, loggedIn: boolean) {
+function requireLogin(loggedIn: boolean): boolean {
   if (!loggedIn) {
     toast.error("Faça login para continuar.");
-    return;
+    return false;
   }
-  toast.message("Em breve", {
-    description: `${action} ainda não está disponível.`,
-  });
+  return true;
 }
 
 function positionCard(
@@ -280,15 +278,29 @@ export function UserHoverCard({
                         });
                       }}
                     />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      className="h-8 px-2 text-xs"
-                      onClick={() => comingSoon("Iniciar conversa", loggedIn)}
-                    >
-                      Iniciar conversa
-                    </Button>
+                    {loggedIn ? (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        className="h-8 px-2 text-xs"
+                        asChild
+                      >
+                        <Link href={pmNewPath(preview.id) as never}>
+                          Iniciar conversa
+                        </Link>
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        className="h-8 px-2 text-xs"
+                        onClick={() => requireLogin(false)}
+                      >
+                        Iniciar conversa
+                      </Button>
+                    )}
                   </div>
                 )}
               </>

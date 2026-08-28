@@ -2,6 +2,7 @@
 
 import {
   LogOutIcon,
+  Mail,
   Search,
   SettingsIcon,
   Shield,
@@ -14,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { Suspense, useSyncExternalStore } from "react";
 
 import { NotificationBell } from "@/components/notification-bell";
+import { PmInboxButton } from "@/components/pm-inbox-button";
 import { SearchForm } from "@/components/search-form";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -108,6 +110,7 @@ export function SiteHeader() {
             user ? (
               <>
                 <NotificationBell />
+                <PmInboxButton />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -154,6 +157,12 @@ export function SiteHeader() {
                     >
                       <UserIcon />
                       Meu perfil
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => router.push("/mensagens" as never)}
+                    >
+                      <Mail />
+                      Mensagens
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => router.push("/subs" as never)}

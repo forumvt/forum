@@ -11,3 +11,12 @@ export function getPublicAppUrl(): string {
 export function userProfilePath(userId: string): string {
   return `/users/${encodeURIComponent(userId)}`;
 }
+
+export function pmNewPath(userId?: string): string {
+  if (!userId) return "/mensagens/nova";
+  return `/mensagens/nova?para=${encodeURIComponent(userId)}`;
+}
+
+export function pmConversationPath(conversationId: string): string {
+  return `/mensagens/${encodeURIComponent(conversationId)}`;
+}

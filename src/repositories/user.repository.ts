@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import {
@@ -345,4 +345,33 @@ export async function findAdminPaginated(options: {
     .offset((options.page - 1) * options.per);
 
   return { users: users as AdminUserItem[], totalCount };
+}
+
+export async function findPublicByNameQuery(
+  query: string,
+  limit: number,
+  excludeIds: string[] = [],
+): Promise<Array<{ id: string; name: string; avatar: string | null }>> {
+  const trimmed = query.trim();
+  if (trimmed.length < 2) return [];
+
+  const excluded = [...new Set(excludeIds.filter(Boolean))];
+  const where = and(
+    ilike(userTable.name, `%${trimmed}%`),
+    isNull(userTable.bannedAt),
+    excluded.length > 0 ? notInArray(userTable.id, excluded) : undefined,
+  );
+
+  const rows = await db
+    .select({
+      id: userTable.id,
+      name: userTable.name,
+      avatar: userTable.image,
+    })
+    .from(userTable)
+    .where(where)
+    .orderBy(userTable.name)
+    .limit(limit);
+
+  return rows;
 }

@@ -14,6 +14,13 @@ export type {
   NotificationsPayload,
   NotificationType,
 } from "./notification";
+export type {
+  ListPmInboxResult,
+  PmConversationView,
+  PmInboxItem,
+  PmMessageItem,
+  PmPerson,
+} from "./pm";
 export type { Post } from "./post";
 export type {
   ThreadBySlug,

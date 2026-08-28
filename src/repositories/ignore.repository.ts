@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, or, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { userIgnoreTable, userTable } from "@/db/schema";
@@ -42,6 +42,29 @@ export async function isIgnored(
       and(
         eq(userIgnoreTable.ignorerUserId, ignorerUserId),
         eq(userIgnoreTable.targetUserId, targetUserId),
+      ),
+    )
+    .limit(1);
+  return Boolean(row);
+}
+
+export async function isEitherIgnored(
+  userA: string,
+  userB: string,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ id: userIgnoreTable.id })
+    .from(userIgnoreTable)
+    .where(
+      or(
+        and(
+          eq(userIgnoreTable.ignorerUserId, userA),
+          eq(userIgnoreTable.targetUserId, userB),
+        ),
+        and(
+          eq(userIgnoreTable.ignorerUserId, userB),
+          eq(userIgnoreTable.targetUserId, userA),
+        ),
       ),
     )
     .limit(1);
