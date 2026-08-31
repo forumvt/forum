@@ -41,6 +41,7 @@ export async function POST(
       {
         error: pmService.sendErrorMessage(result.error),
         reason: result.reason,
+        retryAfterSeconds: result.retryAfterSeconds,
       },
       { status: pmService.sendErrorStatus(result.error) },
     );
@@ -77,6 +78,7 @@ export async function PATCH(
       {
         error: pmService.sendErrorMessage(result.error),
         reason: result.reason,
+        retryAfterSeconds: result.retryAfterSeconds,
       },
       { status: pmService.sendErrorStatus(result.error) },
     );

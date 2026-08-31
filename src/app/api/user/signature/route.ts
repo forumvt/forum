@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import {
+  abuseErrorMessage,
+  abuseErrorStatus,
+  isStaffUser,
+} from "@/lib/abuse-guard";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { requireSessionUser } from "@/lib/staff-guard";
 import * as moderationService from "@/services/moderation.service";
 import * as userService from "@/services/user.service";
@@ -36,6 +42,19 @@ export async function PATCH(request: Request) {
       { error: "Conta suspensa", reason: block.reason },
       { status: 403 },
     );
+  }
+
+  if (!(await isStaffUser(session.userId))) {
+    const rate = await checkRateLimit("signatureUpdate", session.userId);
+    if (!rate.ok) {
+      return NextResponse.json(
+        {
+          error: abuseErrorMessage(rate.error),
+          retryAfterSeconds: rate.retryAfterSeconds,
+        },
+        { status: abuseErrorStatus(rate.error) },
+      );
+    }
   }
 
   const body = await request.json().catch(() => null);

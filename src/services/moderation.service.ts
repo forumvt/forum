@@ -1,9 +1,11 @@
+import { isStaffUser } from "@/lib/abuse-guard";
 import {
   canAssignRole,
   canBanUser,
   toUserRole,
   type UserRole,
 } from "@/lib/permissions";
+import { checkRateLimit, type WriteAbuseError } from "@/lib/rate-limit";
 import * as forumRepo from "@/repositories/forum.repository";
 import * as moderationRepo from "@/repositories/moderation.repository";
 import * as postRepo from "@/repositories/post.repository";
@@ -96,11 +98,27 @@ export async function createReport(
   data: { targetType: ReportTargetType; targetId: string; reason: string },
 ): Promise<
   | { ok: true }
-  | { ok: false; error: "duplicate" | "invalid" | "banned"; reason?: string | null }
+  | {
+      ok: false;
+      error: "duplicate" | "invalid" | "banned" | WriteAbuseError;
+      reason?: string | null;
+      retryAfterSeconds?: number;
+    }
 > {
   const block = await getWriteBlock(reporterUserId);
   if (block.blocked) {
     return { ok: false, error: "banned", reason: block.reason };
+  }
+
+  if (!(await isStaffUser(reporterUserId))) {
+    const rate = await checkRateLimit("reportCreate", reporterUserId);
+    if (!rate.ok) {
+      return {
+        ok: false,
+        error: rate.error,
+        retryAfterSeconds: rate.retryAfterSeconds,
+      };
+    }
   }
 
   const reason = data.reason.trim();

@@ -1,11 +1,16 @@
 import { z } from "zod";
 
+import {
+  abuseErrorMessage,
+  abuseErrorStatus,
+} from "@/lib/abuse-guard";
 import { auth } from "@/lib/auth";
+import { POST_MAX_LENGTH } from "@/lib/rate-limit-config";
 import * as threadService from "@/services/thread.service";
 
 const createThreadSchema = z.object({
-  title: z.string().min(1),
-  description: z.string().min(1),
+  title: z.string().min(1).max(200),
+  description: z.string().min(1).max(POST_MAX_LENGTH),
   forumId: z.string().uuid(),
 });
 
@@ -39,10 +44,28 @@ export async function POST(req: Request) {
   });
 
   if ("error" in thread) {
-    return new Response(
-      JSON.stringify({ error: "Conta suspensa", reason: thread.reason }),
-      { status: 403, headers: { "Content-Type": "application/json" } },
-    );
+    if (thread.error === "banned") {
+      return new Response(
+        JSON.stringify({ error: "Conta suspensa", reason: thread.reason }),
+        { status: 403, headers: { "Content-Type": "application/json" } },
+      );
+    }
+    if (
+      thread.error === "rate_limited" ||
+      thread.error === "cooldown" ||
+      thread.error === "duplicate_content"
+    ) {
+      return new Response(
+        JSON.stringify({
+          error: abuseErrorMessage(thread.error),
+          retryAfterSeconds: thread.retryAfterSeconds,
+        }),
+        {
+          status: abuseErrorStatus(thread.error),
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
   }
 
   return new Response(JSON.stringify(thread), {

@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 
+import {
+  assertAvatarChangeAllowed,
+  getAvatarLimitStatus,
+  recordAvatarChange,
+} from "@/lib/avatar-limit";
 import { requireSessionUser } from "@/lib/staff-guard";
+import { DEFAULT_USER_IMAGE } from "@/lib/user-defaults";
 import * as userRepo from "@/repositories/user.repository";
 import * as moderationService from "@/services/moderation.service";
-
-const DEFAULT_USER_IMAGE = "https://www.subeiros.com/eris-apple.png";
 
 function isCloudinaryHttpsUrl(value: unknown): value is string {
   if (typeof value !== "string") return false;
@@ -18,6 +22,24 @@ function isCloudinaryHttpsUrl(value: unknown): value is string {
   }
 }
 
+function avatarLimitResponse(status: Awaited<ReturnType<typeof getAvatarLimitStatus>>) {
+  return NextResponse.json(
+    {
+      error: "Limite diário de alterações de avatar atingido.",
+      ...status,
+    },
+    { status: 403 },
+  );
+}
+
+export async function GET() {
+  const session = await requireSessionUser();
+  if (!session.ok) return session.response;
+
+  const status = await getAvatarLimitStatus(session.userId);
+  return NextResponse.json(status);
+}
+
 export async function POST(request: Request) {
   const session = await requireSessionUser();
   if (!session.ok) return session.response;
@@ -28,6 +50,11 @@ export async function POST(request: Request) {
       { error: "Conta suspensa", reason: block.reason },
       { status: 403 },
     );
+  }
+
+  const limit = await assertAvatarChangeAllowed(session.userId);
+  if (!limit.ok) {
+    return avatarLimitResponse(limit.status);
   }
 
   let body: unknown;
@@ -48,7 +75,9 @@ export async function POST(request: Request) {
 
   try {
     await userRepo.updateAvatar(session.userId, image);
-    return NextResponse.json({ ok: true });
+    await recordAvatarChange(session.userId);
+    const status = await getAvatarLimitStatus(session.userId);
+    return NextResponse.json({ ok: true, ...status });
   } catch (error) {
     console.error(error);
     return NextResponse.json(
@@ -70,9 +99,16 @@ export async function DELETE() {
     );
   }
 
+  const limit = await assertAvatarChangeAllowed(session.userId);
+  if (!limit.ok) {
+    return avatarLimitResponse(limit.status);
+  }
+
   try {
     await userRepo.updateAvatar(session.userId, DEFAULT_USER_IMAGE);
-    return NextResponse.json({ ok: true });
+    await recordAvatarChange(session.userId);
+    const status = await getAvatarLimitStatus(session.userId);
+    return NextResponse.json({ ok: true, ...status });
   } catch (error) {
     console.error(error);
     return NextResponse.json(

@@ -49,6 +49,7 @@ export async function POST(request: Request) {
       {
         error: pmService.sendErrorMessage(result.error),
         reason: result.reason,
+        retryAfterSeconds: result.retryAfterSeconds,
       },
       { status: pmService.sendErrorStatus(result.error) },
     );

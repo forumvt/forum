@@ -1,6 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 import { NextResponse } from "next/server";
 
+import { assertAvatarChangeAllowed } from "@/lib/avatar-limit";
 import { requireSessionUser } from "@/lib/staff-guard";
 import * as moderationService from "@/services/moderation.service";
 
@@ -24,6 +25,17 @@ export async function POST(request: Request) {
   if (block.blocked) {
     return NextResponse.json(
       { error: "Conta suspensa", reason: block.reason },
+      { status: 403 },
+    );
+  }
+
+  const limit = await assertAvatarChangeAllowed(session.userId);
+  if (!limit.ok) {
+    return NextResponse.json(
+      {
+        error: "Limite diário de alterações de avatar atingido.",
+        ...limit.status,
+      },
       { status: 403 },
     );
   }

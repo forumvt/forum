@@ -1,8 +1,20 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
+import {
+  abuseErrorMessage,
+  abuseErrorStatus,
+} from "@/lib/abuse-guard";
 import { auth } from "@/lib/auth";
+import { POST_MAX_LENGTH } from "@/lib/rate-limit-config";
 import * as postService from "@/services/post.service";
+
+const addReplySchema = z.object({
+  content: z.string().min(1).max(POST_MAX_LENGTH),
+  threadId: z.string().min(1),
+  quotedUserId: z.string().optional(),
+});
 
 export async function POST(request: Request) {
   try {
@@ -14,20 +26,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { content, threadId, quotedUserId } = await request.json();
-
-    if (!content || !threadId) {
+    const body = await request.json();
+    const validation = addReplySchema.safeParse(body);
+    if (!validation.success) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: validation.error.message },
         { status: 400 },
       );
     }
+
+    const { content, threadId, quotedUserId } = validation.data;
 
     const result = await postService.addReply(
       threadId,
       session.user.id,
       content,
-      typeof quotedUserId === "string" ? quotedUserId : null,
+      quotedUserId ?? null,
     );
 
     if (!result.ok) {
@@ -41,6 +55,19 @@ export async function POST(request: Request) {
         return NextResponse.json(
           { error: "Este tópico está trancado." },
           { status: 403 },
+        );
+      }
+      if (
+        result.error === "rate_limited" ||
+        result.error === "cooldown" ||
+        result.error === "duplicate_content"
+      ) {
+        return NextResponse.json(
+          {
+            error: abuseErrorMessage(result.error),
+            retryAfterSeconds: result.retryAfterSeconds,
+          },
+          { status: abuseErrorStatus(result.error) },
         );
       }
       return NextResponse.json(

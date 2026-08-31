@@ -1,3 +1,5 @@
+import { assertWriteAbuseChecks } from "@/lib/abuse-guard";
+import { recordContentSent } from "@/lib/anti-spam";
 import {
   canChangeAuthor,
   canDeleteThread,
@@ -5,6 +7,7 @@ import {
   canModerateContent,
   isStaff,
 } from "@/lib/permissions";
+import type { WriteAbuseError } from "@/lib/rate-limit";
 import {
   excerptAroundMatch,
   MIN_SEARCH_QUERY_LENGTH,
@@ -160,19 +163,43 @@ export async function createThread(data: {
   description: string;
   forumId: string;
   userId: string;
-}): Promise<{ id: string } | { error: "banned"; reason: string | null }> {
+}): Promise<
+  | { id: string }
+  | {
+      error: "banned" | WriteAbuseError;
+      reason?: string | null;
+      retryAfterSeconds?: number;
+    }
+> {
   const block = await moderationService.getWriteBlock(data.userId);
   if (block.blocked) {
     return { error: "banned", reason: block.reason };
   }
+
+  const abuse = await assertWriteAbuseChecks(data.userId, {
+    rateLimit: "threadCreate",
+    flood: "threadCreate",
+    content: data.description,
+  });
+  if (!abuse.ok) {
+    return {
+      error: abuse.error,
+      retryAfterSeconds: abuse.retryAfterSeconds,
+    };
+  }
+
   const slug = generateSlug(data.title);
-  return threadRepo.create({
+  const created = await threadRepo.create({
     title: data.title,
     slug,
     description: data.description,
     forumId: data.forumId,
     userId: data.userId,
   });
+
+  await recordContentSent(data.userId, data.description);
+
+  return created;
 }
 
 export async function markThreadAsRead(

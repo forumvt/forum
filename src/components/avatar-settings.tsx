@@ -2,7 +2,7 @@
 
 import { Upload, X } from "lucide-react";
 import { CldUploadButton } from "next-cloudinary";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -15,6 +15,13 @@ interface User {
   image?: string | null;
 }
 
+interface AvatarLimitStatus {
+  limit: number;
+  usedChanges: number;
+  remainingChanges: number;
+  resetsAt: string;
+}
+
 interface AvatarSettingsProps {
   user: User;
 }
@@ -23,6 +30,34 @@ export function AvatarSettings({ user }: AvatarSettingsProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(
     user.image ?? null,
   );
+  const [limitStatus, setLimitStatus] = useState<AvatarLimitStatus | null>(
+    null,
+  );
+  const [loadingStatus, setLoadingStatus] = useState(true);
+
+  const canChangeAvatar = (limitStatus?.remainingChanges ?? 0) > 0;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadStatus() {
+      try {
+        const res = await fetch("/api/user/avatar");
+        if (!res.ok) return;
+        const data = (await res.json()) as AvatarLimitStatus;
+        if (!cancelled) setLimitStatus(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        if (!cancelled) setLoadingStatus(false);
+      }
+    }
+
+    void loadStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleUpload = async (secureUrl: string) => {
     try {
@@ -32,13 +67,31 @@ export function AvatarSettings({ user }: AvatarSettingsProps) {
         body: JSON.stringify({ image: secureUrl }),
       });
 
-      if (!res.ok) throw new Error("Falha ao salvar avatar no banco");
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        const message =
+          typeof data?.error === "string"
+            ? data.error
+            : "Falha ao salvar avatar no banco";
+        throw new Error(message);
+      }
 
       setPreviewUrl(secureUrl);
+      if (data && typeof data.remainingChanges === "number") {
+        setLimitStatus({
+          limit: data.limit,
+          usedChanges: data.usedChanges,
+          remainingChanges: data.remainingChanges,
+          resetsAt: data.resetsAt,
+        });
+      }
       toast.success("Avatar atualizado com sucesso!");
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao salvar avatar no banco.");
+      toast.error(
+        err instanceof Error ? err.message : "Erro ao salvar avatar no banco.",
+      );
     }
   };
 
@@ -47,14 +100,34 @@ export function AvatarSettings({ user }: AvatarSettingsProps) {
       const res = await fetch("/api/user/avatar", {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Falha ao remover o avatar");
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        const message =
+          typeof data?.error === "string"
+            ? data.error
+            : "Falha ao remover o avatar";
+        throw new Error(message);
+      }
 
       setPreviewUrl(null);
+      if (data && typeof data.remainingChanges === "number") {
+        setLimitStatus({
+          limit: data.limit,
+          usedChanges: data.usedChanges,
+          remainingChanges: data.remainingChanges,
+          resetsAt: data.resetsAt,
+        });
+      }
       toast.success("Avatar removido com sucesso!");
       window.location.reload();
     } catch (error) {
       console.error("Error removing avatar:", error);
-      toast.error("Falha ao remover o avatar. Tente novamente.");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Falha ao remover o avatar. Tente novamente.",
+      );
     }
   };
 
@@ -70,10 +143,9 @@ export function AvatarSettings({ user }: AvatarSettingsProps) {
         </Avatar>
 
         <div className="space-y-2">
-          {/* Botão de upload direto para Cloudinary */}
           <CldUploadButton
             signatureEndpoint="/api/sign-image"
-            options={{ folder: "avatars" }} // opcional: pasta no Cloudinary
+            options={{ folder: "avatars" }}
             onSuccess={(result) => {
               if (
                 result.info &&
@@ -87,7 +159,7 @@ export function AvatarSettings({ user }: AvatarSettingsProps) {
               }
             }}
           >
-            <Button type="button" variant="outline">
+            <Button type="button" variant="outline" disabled={!canChangeAvatar}>
               <Upload />
               Alterar Avatar
             </Button>
@@ -98,6 +170,7 @@ export function AvatarSettings({ user }: AvatarSettingsProps) {
               variant="destructive"
               size="sm"
               onClick={handleRemoveAvatar}
+              disabled={!canChangeAvatar}
             >
               <X />
               Remover Avatar
@@ -106,9 +179,18 @@ export function AvatarSettings({ user }: AvatarSettingsProps) {
         </div>
       </div>
 
-      <p className="text-muted-foreground text-sm">
-        Upload direto no Cloudinary. Formatos aceitos: JPG, PNG, GIF.
-      </p>
+      <div className="text-muted-foreground space-y-1 text-sm">
+        <p>Upload direto no Cloudinary. Formatos aceitos: JPG, PNG, GIF.</p>
+        {!loadingStatus && limitStatus && (
+          <p>
+            Você pode alterar o avatar até {limitStatus.limit} vezes por dia.
+            Restam {limitStatus.remainingChanges} alteração
+            {limitStatus.remainingChanges === 1 ? "" : "ões"}.
+            {limitStatus.remainingChanges === 0 &&
+              " Tente novamente amanhã."}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

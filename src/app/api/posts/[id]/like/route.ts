@@ -1,6 +1,10 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
+import {
+  abuseErrorMessage,
+  abuseErrorStatus,
+} from "@/lib/abuse-guard";
 import { auth } from "@/lib/auth";
 import * as likeService from "@/services/like.service";
 
@@ -24,6 +28,15 @@ export async function POST(
       return NextResponse.json(
         { error: "Conta suspensa", reason: result.reason },
         { status: 403 },
+      );
+    }
+    if (result.error === "rate_limited") {
+      return NextResponse.json(
+        {
+          error: abuseErrorMessage(result.error),
+          retryAfterSeconds: result.retryAfterSeconds,
+        },
+        { status: abuseErrorStatus(result.error) },
       );
     }
     return NextResponse.json({ error: "Post not found" }, { status: 404 });

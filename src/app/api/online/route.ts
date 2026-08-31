@@ -1,12 +1,13 @@
-import { Redis } from "@upstash/redis";
 import { NextResponse } from "next/server";
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-});
+import { getRedis } from "@/lib/redis";
 
 export async function GET() {
+  const redis = getRedis();
+  if (!redis) {
+    return NextResponse.json({ logged: 0, guests: 0, total: 0 });
+  }
+
   const users = await redis.keys("online:user:*");
   const guests = await redis.keys("online:guest:*");
 

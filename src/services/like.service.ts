@@ -1,3 +1,5 @@
+import { isStaffUser } from "@/lib/abuse-guard";
+import { checkRateLimit, type WriteAbuseError } from "@/lib/rate-limit";
 import * as likeRepo from "@/repositories/like.repository";
 import * as postRepo from "@/repositories/post.repository";
 import * as threadRepo from "@/repositories/thread.repository";
@@ -6,7 +8,12 @@ import * as notificationService from "@/services/notification.service";
 
 export type ToggleLikeResult =
   | { ok: true; liked: boolean }
-  | { ok: false; error: "not_found" | "banned"; reason?: string | null };
+  | {
+      ok: false;
+      error: "not_found" | "banned" | WriteAbuseError;
+      reason?: string | null;
+      retryAfterSeconds?: number;
+    };
 
 export async function togglePostLike(
   postId: string,
@@ -15,6 +22,17 @@ export async function togglePostLike(
   const block = await moderationService.getWriteBlock(actorUserId);
   if (block.blocked) {
     return { ok: false, error: "banned", reason: block.reason };
+  }
+
+  if (!(await isStaffUser(actorUserId))) {
+    const rate = await checkRateLimit("likeToggle", actorUserId);
+    if (!rate.ok) {
+      return {
+        ok: false,
+        error: rate.error,
+        retryAfterSeconds: rate.retryAfterSeconds,
+      };
+    }
   }
 
   const post = await postRepo.findById(postId);
@@ -50,6 +68,17 @@ export async function toggleThreadLike(
   const block = await moderationService.getWriteBlock(actorUserId);
   if (block.blocked) {
     return { ok: false, error: "banned", reason: block.reason };
+  }
+
+  if (!(await isStaffUser(actorUserId))) {
+    const rate = await checkRateLimit("likeToggle", actorUserId);
+    if (!rate.ok) {
+      return {
+        ok: false,
+        error: rate.error,
+        retryAfterSeconds: rate.retryAfterSeconds,
+      };
+    }
   }
 
   const thread = await threadRepo.findBySlug(slug);

@@ -1,3 +1,6 @@
+import { assertWriteAbuseChecks } from "@/lib/abuse-guard";
+import { recordContentSent } from "@/lib/anti-spam";
+import type { WriteAbuseError } from "@/lib/rate-limit";
 import { excerptStart } from "@/lib/search";
 import * as ignoreRepo from "@/repositories/ignore.repository";
 import * as pmRepo from "@/repositories/pm.repository";
@@ -21,11 +24,17 @@ export type SendPmError =
   | "empty"
   | "too_long"
   | "too_many"
-  | "already_member";
+  | "already_member"
+  | WriteAbuseError;
 
 export type SendPmResult =
   | { ok: true; conversationId: string; messageId?: string }
-  | { ok: false; error: SendPmError; reason?: string | null };
+  | {
+      ok: false;
+      error: SendPmError;
+      reason?: string | null;
+      retryAfterSeconds?: number;
+    };
 
 function normalizeContent(content: string): string {
   return content.trim();
@@ -49,6 +58,25 @@ async function assertCanMessage(
   }
   if (await ignoreRepo.isEitherIgnored(senderId, recipientId)) {
     return { ok: false, error: "ignored" };
+  }
+  return null;
+}
+
+async function assertPmAbuseChecks(
+  senderId: string,
+  content: string,
+): Promise<SendPmResult | null> {
+  const abuse = await assertWriteAbuseChecks(senderId, {
+    rateLimit: "pmSend",
+    flood: "pmSend",
+    content,
+  });
+  if (!abuse.ok) {
+    return {
+      ok: false,
+      error: abuse.error,
+      retryAfterSeconds: abuse.retryAfterSeconds,
+    };
   }
   return null;
 }
@@ -99,6 +127,9 @@ export async function sendToUsers(
   if (!content) return { ok: false, error: "empty" };
   if (content.length > PM_MAX_LENGTH) return { ok: false, error: "too_long" };
 
+  const abuse = await assertPmAbuseChecks(senderId, content);
+  if (abuse) return abuse;
+
   let conversationId: string | null = null;
   if (validated.ids.length === 1) {
     conversationId = await pmRepo.findConversationIdByPair(
@@ -119,6 +150,8 @@ export async function sendToUsers(
     content,
     preview: excerptStart(content, 140),
   });
+
+  await recordContentSent(senderId, content);
 
   return { ok: true, conversationId, messageId: created.id };
 }
@@ -143,12 +176,17 @@ export async function replyToConversation(
   if (!content) return { ok: false, error: "empty" };
   if (content.length > PM_MAX_LENGTH) return { ok: false, error: "too_long" };
 
+  const abuse = await assertPmAbuseChecks(senderId, content);
+  if (abuse) return abuse;
+
   const created = await pmRepo.insertMessage({
     conversationId,
     senderId,
     content,
     preview: excerptStart(content, 140),
   });
+
+  await recordContentSent(senderId, content);
 
   return { ok: true, conversationId, messageId: created.id };
 }
@@ -265,6 +303,11 @@ export function sendErrorStatus(error: SendPmError): number {
       return 403;
     case "not_found":
       return 404;
+    case "duplicate_content":
+      return 409;
+    case "rate_limited":
+    case "cooldown":
+      return 429;
     default:
       return 400;
   }
@@ -292,5 +335,11 @@ export function sendErrorMessage(error: SendPmError): string {
       return `A conversa pode ter no máximo ${PM_MAX_PARTICIPANTS} pessoas`;
     case "already_member":
       return "Essa pessoa já está na conversa";
+    case "rate_limited":
+      return "Muitas mensagens em pouco tempo. Aguarde antes de tentar novamente.";
+    case "cooldown":
+      return "Aguarde um momento antes de enviar outra mensagem.";
+    case "duplicate_content":
+      return "Você já enviou esta mensagem recentemente.";
   }
 }

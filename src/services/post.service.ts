@@ -1,10 +1,13 @@
 import { db } from "@/db";
+import { assertWriteAbuseChecks } from "@/lib/abuse-guard";
+import { recordContentSent } from "@/lib/anti-spam";
 import {
   canChangeAuthor,
   canDeletePost,
   canEditPost,
   isStaff,
 } from "@/lib/permissions";
+import type { WriteAbuseError } from "@/lib/rate-limit";
 import * as postRepo from "@/repositories/post.repository";
 import * as threadRepo from "@/repositories/thread.repository";
 import * as userRepo from "@/repositories/user.repository";
@@ -20,13 +23,27 @@ export async function addReply(
   | { ok: true; id: string }
   | {
       ok: false;
-      error: "banned" | "locked" | "deleted";
+      error: "banned" | "locked" | "deleted" | WriteAbuseError;
       reason?: string | null;
+      retryAfterSeconds?: number;
     }
 > {
   const block = await moderationService.getWriteBlock(userId);
   if (block.blocked) {
     return { ok: false, error: "banned", reason: block.reason };
+  }
+
+  const abuse = await assertWriteAbuseChecks(userId, {
+    rateLimit: "postReply",
+    flood: "postReply",
+    content,
+  });
+  if (!abuse.ok) {
+    return {
+      ok: false,
+      error: abuse.error,
+      retryAfterSeconds: abuse.retryAfterSeconds,
+    };
   }
 
   const thread = await threadRepo.findMetaById(threadId);
@@ -53,6 +70,8 @@ export async function addReply(
     postId: result.id,
     quotedUserId,
   });
+
+  await recordContentSent(userId, content);
 
   return { ok: true, id: result.id };
 }

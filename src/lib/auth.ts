@@ -7,9 +7,14 @@ import * as schema from "@/db/schema";
 import { getTrustedOrigins } from "@/lib/auth-cors";
 import { sendEmail } from "@/lib/email";
 import {
+  assertAuthRateLimit,
+  getClientIpFromHeaders,
+} from "@/lib/rate-limit";
+import {
   normalizeEmailStripBrDomain,
   validateRegistrationCredentials,
 } from "@/lib/register-validation";
+import { DEFAULT_USER_IMAGE } from "@/lib/user-defaults";
 import * as userRepo from "@/repositories/user.repository";
 
 const betterAuthSecret = process.env.BETTER_AUTH_SECRET;
@@ -40,9 +45,6 @@ function rootCookieDomainFromBaseUrl(url: string): string | undefined {
 
 const cookieDomain = rootCookieDomainFromBaseUrl(authBaseUrl);
 
-const DEFAULT_USER_IMAGE =
-  "https://www.subeiros.com/eris-apple.png";
-
 export const auth = betterAuth({
   secret: betterAuthSecret,
   baseURL: authBaseUrl || undefined,
@@ -59,6 +61,22 @@ export const auth = betterAuth({
     : {}),
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
+      const headerSource =
+        ctx.headers instanceof Headers
+          ? ctx.headers
+          : ctx.request?.headers ?? new Headers();
+      const ip = getClientIpFromHeaders(headerSource);
+
+      if (ctx.path === "/sign-in/email") {
+        await assertAuthRateLimit("authSignIn", ip);
+      }
+      if (ctx.path === "/sign-up/email") {
+        await assertAuthRateLimit("authSignUp", ip);
+      }
+      if (ctx.path === "/forget-password") {
+        await assertAuthRateLimit("authForgotPassword", ip);
+      }
+
       const emailPaths = ["/sign-up/email", "/sign-in/email", "/forget-password"];
       if (emailPaths.includes(ctx.path)) {
         const body = ctx.body as { email?: unknown };

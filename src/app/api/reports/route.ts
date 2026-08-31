@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import {
+  abuseErrorMessage,
+  abuseErrorStatus,
+} from "@/lib/abuse-guard";
 import { requireSessionUser } from "@/lib/staff-guard";
 import * as moderationService from "@/services/moderation.service";
 
@@ -35,6 +39,19 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Você já denunciou este conteúdo." },
         { status: 409 },
+      );
+    }
+    if (
+      result.error === "rate_limited" ||
+      result.error === "cooldown" ||
+      result.error === "duplicate_content"
+    ) {
+      return NextResponse.json(
+        {
+          error: abuseErrorMessage(result.error),
+          retryAfterSeconds: result.retryAfterSeconds,
+        },
+        { status: abuseErrorStatus(result.error) },
       );
     }
     return NextResponse.json({ error: "Denúncia inválida." }, { status: 400 });
