@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { checkRateLimit, getClientIpFromHeaders } from "@/lib/rate-limit";
-import { getRedis } from "@/lib/redis";
+import { withRedis } from "@/lib/redis";
 
 export async function POST() {
   const headerList = await headers();
@@ -27,30 +27,26 @@ export async function POST() {
     );
   }
 
-  const redis = getRedis();
-  if (!redis) {
-    return NextResponse.json({ ok: true });
-  }
-
-  if (userId) {
-    if (guestId) {
-      await redis.del(`online:guest:${guestId}`);
-      cookieStore.delete("guestId");
+  await withRedis(undefined, async (redis) => {
+    if (userId) {
+      if (guestId) {
+        await redis.del(`online:guest:${guestId}`);
+        cookieStore.delete("guestId");
+      }
+      await redis.set(`online:user:${userId}`, 1, { ex: ttl });
+      return;
     }
 
-    await redis.set(`online:user:${userId}`, 1, { ex: ttl });
-    return NextResponse.json({ ok: true });
-  }
+    if (!guestId) {
+      guestId = randomUUID();
+      cookieStore.set("guestId", guestId, {
+        httpOnly: true,
+        maxAge: 60 * 60 * 24 * 7,
+      });
+    }
 
-  if (!guestId) {
-    guestId = randomUUID();
-    cookieStore.set("guestId", guestId, {
-      httpOnly: true,
-      maxAge: 60 * 60 * 24 * 7,
-    });
-  }
-
-  await redis.set(`online:guest:${guestId}`, 1, { ex: ttl });
+    await redis.set(`online:guest:${guestId}`, 1, { ex: ttl });
+  });
 
   return NextResponse.json({ ok: true });
 }

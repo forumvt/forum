@@ -1,7 +1,7 @@
 import { APIError } from "better-auth/api";
 
 import { RATE_LIMITS } from "@/lib/rate-limit-config";
-import { getRedis } from "@/lib/redis";
+import { withRedis } from "@/lib/redis";
 
 export type WriteAbuseError = "rate_limited" | "cooldown" | "duplicate_content";
 
@@ -42,27 +42,26 @@ async function checkFixedWindowRateLimit(
   identifier: string,
   config: RateLimitConfig,
 ): Promise<AbuseBlockResult> {
-  const redis = getRedis();
-  if (!redis) return { ok: true };
+  return withRedis({ ok: true } as AbuseBlockResult, async (redis) => {
+    const windowSeconds = windowToSeconds(config.window);
+    const key = `rl:${prefix}:${identifier}`;
+    const count = await redis.incr(key);
 
-  const windowSeconds = windowToSeconds(config.window);
-  const key = `rl:${prefix}:${identifier}`;
-  const count = await redis.incr(key);
+    if (count === 1) {
+      await redis.expire(key, windowSeconds);
+    }
 
-  if (count === 1) {
-    await redis.expire(key, windowSeconds);
-  }
+    if (count > config.requests) {
+      const ttl = await redis.ttl(key);
+      return {
+        ok: false,
+        error: "rate_limited",
+        retryAfterSeconds: ttl > 0 ? ttl : windowSeconds,
+      };
+    }
 
-  if (count > config.requests) {
-    const ttl = await redis.ttl(key);
-    return {
-      ok: false,
-      error: "rate_limited",
-      retryAfterSeconds: ttl > 0 ? ttl : windowSeconds,
-    };
-  }
-
-  return { ok: true };
+    return { ok: true };
+  });
 }
 
 const limitConfigs = {

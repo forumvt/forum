@@ -1,5 +1,5 @@
 import { AVATAR_DAILY_LIMIT } from "@/lib/rate-limit-config";
-import { getRedis } from "@/lib/redis";
+import { withRedis } from "@/lib/redis";
 
 function utcDateKey(date = new Date()): string {
   return date.toISOString().slice(0, 10);
@@ -42,14 +42,11 @@ function buildStatus(usedChanges: number): AvatarLimitStatus {
 export async function getAvatarLimitStatus(
   userId: string,
 ): Promise<AvatarLimitStatus> {
-  const redis = getRedis();
-  if (!redis) {
-    return buildStatus(0);
-  }
-
-  const key = `avatar:changes:${userId}:${utcDateKey()}`;
-  const usedChanges = Number(await redis.get(key)) || 0;
-  return buildStatus(usedChanges);
+  return withRedis(buildStatus(0), async (redis) => {
+    const key = `avatar:changes:${userId}:${utcDateKey()}`;
+    const usedChanges = Number(await redis.get(key)) || 0;
+    return buildStatus(usedChanges);
+  });
 }
 
 export async function assertAvatarChangeAllowed(
@@ -63,12 +60,11 @@ export async function assertAvatarChangeAllowed(
 }
 
 export async function recordAvatarChange(userId: string): Promise<void> {
-  const redis = getRedis();
-  if (!redis) return;
-
-  const key = `avatar:changes:${userId}:${utcDateKey()}`;
-  const count = await redis.incr(key);
-  if (count === 1) {
-    await redis.expire(key, secondsUntilNextUtcDay());
-  }
+  await withRedis(undefined, async (redis) => {
+    const key = `avatar:changes:${userId}:${utcDateKey()}`;
+    const count = await redis.incr(key);
+    if (count === 1) {
+      await redis.expire(key, secondsUntilNextUtcDay());
+    }
+  });
 }
