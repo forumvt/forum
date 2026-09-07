@@ -60,8 +60,7 @@ export const ReplyForm = forwardRef<ReplyFormHandle, ReplyFormProps>(
           body: JSON.stringify({
             content: content.trim(),
             threadId,
-            userId,
-            quotedUserId,
+            ...(quotedUserId ? { quotedUserId } : {}),
           }),
         });
 

@@ -13,7 +13,7 @@ import * as postService from "@/services/post.service";
 const addReplySchema = z.object({
   content: z.string().min(1).max(POST_MAX_LENGTH),
   threadId: z.string().min(1),
-  quotedUserId: z.string().optional(),
+  quotedUserId: z.string().nullish(),
 });
 
 export async function POST(request: Request) {
