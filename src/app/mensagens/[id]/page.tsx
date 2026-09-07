@@ -7,6 +7,7 @@ import { PmComposeForm } from "@/components/pm-compose-form";
 import { PmMessageList } from "@/components/pm-message-list";
 import { UserAvatarLink, UserNameLink } from "@/components/user-link";
 import { auth } from "@/lib/auth";
+import { NOINDEX_ROBOTS } from "@/lib/site";
 import * as pmService from "@/services/pm.service";
 import { pmConversationTitle } from "@/types/pm";
 
@@ -19,7 +20,7 @@ export async function generateMetadata({
     headers: await headers(),
   });
   if (!session?.user) {
-    return { title: "Mensagens | VT Forums" };
+    return { title: "Mensagens | VT Forums", robots: NOINDEX_ROBOTS };
   }
   const { id } = await params;
   const conversation = await pmService.getConversation(
@@ -27,10 +28,11 @@ export async function generateMetadata({
     decodeURIComponent(id),
   );
   if (!conversation) {
-    return { title: "Conversa | VT Forums" };
+    return { title: "Conversa | VT Forums", robots: NOINDEX_ROBOTS };
   }
   return {
     title: `${pmConversationTitle(conversation.participants)} | VT Forums`,
+    robots: NOINDEX_ROBOTS,
   };
 }
 

@@ -1,4 +1,5 @@
 import { MessageSquare, Search } from "lucide-react";
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Suspense } from "react";
 
@@ -21,13 +22,19 @@ export async function generateMetadata({
   searchParams,
 }: {
   searchParams: SearchPageParams;
-}) {
+}): Promise<Metadata> {
   const params = await searchParams;
   const query = normalizeSearchQuery(params.q ?? "");
   if (!query) {
-    return { title: "Pesquisar tópicos | VT Forums" };
+    return {
+      title: "Pesquisar tópicos | VT Forums",
+      alternates: { canonical: "/search" },
+    };
   }
-  return { title: `Pesquisa: ${query} | VT Forums` };
+  return {
+    title: `Pesquisa: ${query} | VT Forums`,
+    alternates: { canonical: "/search" },
+  };
 }
 
 async function SearchResults({

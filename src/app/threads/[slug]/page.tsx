@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
@@ -7,6 +8,7 @@ import { auth } from "@/lib/auth";
 import { DELETED_POST_NOTICE } from "@/lib/moderation-copy";
 import { isStaff, roleLabel } from "@/lib/permissions";
 import { resolveActor } from "@/lib/session-actor";
+import { NOINDEX_ROBOTS, plainTextExcerpt } from "@/lib/site";
 import { formatMemberSince } from "@/lib/utils";
 import * as likeRepo from "@/repositories/like.repository";
 import * as forumService from "@/services/forum.service";
@@ -22,6 +24,35 @@ const DEFAULT_PER = 50;
 interface ThreadPageProps {
   params: Promise<{ slug: string }>;
   searchParams?: Promise<{ page?: string; per?: string }>;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const thread = await threadService.getThreadBySlug(slug);
+  if (!thread || thread.deletedAt) {
+    return {
+      title: "Tópico | VT Forums",
+      robots: NOINDEX_ROBOTS,
+    };
+  }
+  const description =
+    plainTextExcerpt(thread.description) ||
+    `Tópico em ${thread.forumTitle} no VT Forums.`;
+  return {
+    title: `${thread.title} | VT Forums`,
+    description,
+    alternates: { canonical: `/threads/${thread.slug}` },
+    openGraph: {
+      title: `${thread.title} | VT Forums`,
+      description,
+      url: `/threads/${thread.slug}`,
+      type: "article",
+    },
+  };
 }
 
 export default async function ThreadPage({

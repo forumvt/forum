@@ -14,6 +14,11 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
+import {
+  CANONICAL_SITE_ORIGIN,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+} from "@/lib/site";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,8 +37,25 @@ const specialElite = Special_Elite({
 });
 
 export const metadata: Metadata = {
-  title: "VT Forums",
-  description: "Forum brasileiro de discussão",
+  metadataBase: new URL(CANONICAL_SITE_ORIGIN),
+  title: SITE_NAME,
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    url: CANONICAL_SITE_ORIGIN,
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    images: [{ url: "/eris-apple.png", alt: SITE_NAME }],
+  },
+  twitter: {
+    card: "summary",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    images: ["/eris-apple.png"],
+  },
   icons: { icon: "/eris-apple.png" },
 };
 

@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { auth } from "@/lib/auth";
 import { canAssignRole, isStaff } from "@/lib/permissions";
 import { resolveActor } from "@/lib/session-actor";
+import { NOINDEX_ROBOTS } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import * as moderationService from "@/services/moderation.service";
 
@@ -47,6 +48,7 @@ const actionLabel: Record<string, string> = {
 
 export const metadata = {
   title: "Moderação | VT Forums",
+  robots: NOINDEX_ROBOTS,
 };
 
 export default async function ModeracaoPage({

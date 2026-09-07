@@ -7,6 +7,7 @@ import { ThreadList, ThreadListItem } from "@/components/thread-list-item";
 import { ThreadsPagination } from "@/components/threads-pagination";
 import { UserAvatarLink, UserNameLink } from "@/components/user-link";
 import { auth } from "@/lib/auth";
+import { NOINDEX_ROBOTS } from "@/lib/site";
 import * as subscriptionService from "@/services/subscription.service";
 import * as threadService from "@/services/thread.service";
 
@@ -14,6 +15,7 @@ const DEFAULT_PER = 20;
 
 export const metadata = {
   title: "Meus subs | VT Forums",
+  robots: NOINDEX_ROBOTS,
 };
 
 async function SubsFeed({

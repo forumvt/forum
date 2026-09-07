@@ -4,11 +4,13 @@ import { notFound, redirect } from "next/navigation";
 
 import { PmComposeForm } from "@/components/pm-compose-form";
 import { auth } from "@/lib/auth";
+import { NOINDEX_ROBOTS } from "@/lib/site";
 import * as userService from "@/services/user.service";
 import type { PmPerson } from "@/types/pm";
 
 export const metadata = {
   title: "Nova mensagem | VT Forums",
+  robots: NOINDEX_ROBOTS,
 };
 
 export default async function NovaMensagemPage({

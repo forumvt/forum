@@ -1,4 +1,5 @@
 import { MessageSquare } from "lucide-react";
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Suspense } from "react";
 
@@ -14,6 +15,10 @@ import * as threadService from "@/services/thread.service";
 import type { FilterType } from "@/types/filters";
 
 const DEFAULT_PER = 20;
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 async function HomeContent({
   searchParams,
