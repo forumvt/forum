@@ -38,6 +38,22 @@ function andVisible(condition?: SQL) {
   return condition ? and(visibleThreads, condition) : visibleThreads;
 }
 
+function viewerParticipatedSql(sessionUserId: string | null) {
+  if (!sessionUserId) {
+    return sql<boolean>`false`.mapWith(Boolean);
+  }
+
+  return sql<boolean>`
+    (${threadTable.userId} = ${sessionUserId})
+    OR EXISTS (
+      SELECT 1 FROM ${postTable}
+      WHERE ${postTable.threadId} = ${threadTable.id}
+        AND ${postTable.userId} = ${sessionUserId}
+        AND ${postTable.deletedAt} IS NULL
+    )
+  `.mapWith(Boolean);
+}
+
 export async function findBySlug(slug: string): Promise<ThreadBySlug | null> {
   const [row] = await db
     .select({
@@ -204,6 +220,7 @@ export async function findManyPaginated(
       lastPostUserId: threadTable.lastPostUserId,
       lastPostUserName: lastPostUser.name,
       lastPostUserAvatar: lastPostUser.image,
+      viewerParticipated: viewerParticipatedSql(sessionUserId),
       isLocked: threadTable.isLocked,
       isPinned: threadTable.isPinned,
     })
@@ -319,6 +336,7 @@ export async function searchPaginated(
       lastPostUserId: threadTable.lastPostUserId,
       lastPostUserName: lastPostUser.name,
       lastPostUserAvatar: lastPostUser.image,
+      viewerParticipated: viewerParticipatedSql(sessionUserId),
       forumTitle: forumTable.title,
       forumSlug: forumTable.slug,
       isLocked: threadTable.isLocked,

@@ -17,6 +17,7 @@ export interface ThreadListItem {
   lastPostUserId: string | null;
   lastPostUserName: string | null;
   lastPostUserAvatar: string | null;
+  viewerParticipated: boolean;
   authorIgnored?: boolean;
   lastPostIgnored?: boolean;
   isLocked?: boolean;

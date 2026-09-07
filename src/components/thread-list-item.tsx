@@ -1,3 +1,5 @@
+"use client";
+
 import { Clock, Eye, MessageSquare, Reply, User } from "lucide-react";
 import Link from "next/link";
 
@@ -6,10 +8,12 @@ import {
   IgnoredReveal,
 } from "@/components/ignored-reveal";
 import { ThreadTitleWithPreview } from "@/components/thread-title-with-preview";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { UserAvatarLink, UserNameLink } from "@/components/user-link";
+import { authClient } from "@/lib/auth-client";
 import { formatReplyWhen } from "@/lib/format-relative-time";
-import { cn } from "@/lib/utils";
+import { cn, userInitials } from "@/lib/utils";
 import type { ThreadListItem as ThreadListItemType } from "@/types/thread";
 
 export function ThreadList({
@@ -46,15 +50,14 @@ export function ThreadListItem({
   showViews?: boolean;
   id?: string;
 }) {
+  const { data: session } = authClient.useSession();
+  const sessionUser = session?.user;
   const hasLastReply = thread.postsCount > 0 && !!thread.lastPostUserId;
-  const avatarUserId = hasLastReply ? thread.lastPostUserId : thread.userId;
-  const avatarName = hasLastReply ? thread.lastPostUserName : thread.userName;
-  const avatarSrc = hasLastReply
-    ? thread.lastPostUserAvatar
-    : thread.userAvatar;
   const activityName = hasLastReply ? thread.lastPostUserName : thread.userName;
   const activityUserId = hasLastReply ? thread.lastPostUserId : thread.userId;
   const activityAt = hasLastReply ? thread.lastPostAt : thread.createdAt;
+  const showViewerOverlay =
+    thread.viewerParticipated && Boolean(sessionUser?.id);
 
   return (
     <IgnoredReveal
@@ -69,12 +72,31 @@ export function ThreadListItem({
         )}
       >
         <div className="flex items-start gap-3 p-3 sm:gap-4 sm:p-6">
-          <UserAvatarLink
-            userId={avatarUserId}
-            name={avatarName}
-            avatar={avatarSrc}
-            className="size-10 rounded-sm sm:size-12 sm:rounded-none"
-          />
+          <div className="relative shrink-0">
+            <UserAvatarLink
+              userId={thread.userId}
+              name={thread.userName}
+              avatar={thread.userAvatar}
+              className="size-10 rounded-sm sm:size-12 sm:rounded-none"
+            />
+            {showViewerOverlay ? (
+              <Avatar
+                className="border-background absolute -right-1 -bottom-1 size-4 border sm:size-5"
+                title="Você participou deste tópico"
+              >
+                <AvatarImage
+                  src={
+                    (sessionUser?.image as string | undefined) ||
+                    "/placeholder.svg"
+                  }
+                  alt=""
+                />
+                <AvatarFallback className="bg-muted text-[8px] sm:text-[9px]">
+                  {userInitials(sessionUser?.name)}
+                </AvatarFallback>
+              </Avatar>
+            ) : null}
+          </div>
 
           <div className="min-w-0 flex-1">
             <ThreadTitleWithPreview
