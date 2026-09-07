@@ -149,30 +149,10 @@ export function ThreadListItem({
                   {new Date(thread.createdAt).toLocaleDateString("pt-BR")}
                 </span>
               </div>
-              {thread.postsCount > 0 && thread.lastPostAt ? (
-                <div className="flex items-center gap-1">
-                  <MessageSquare className="h-3 w-3" />
-                  <span>
-                    Última resposta
-                    {thread.lastPostUserName ? (
-                      <>
-                        {" "}
-                        por{" "}
-                        <UserNameLink
-                          userId={thread.lastPostUserId}
-                          name={thread.lastPostUserName}
-                          className="font-medium text-foreground"
-                        />
-                      </>
-                    ) : null}{" "}
-                    {formatReplyWhen(thread.lastPostAt)}
-                  </span>
-                </div>
-              ) : null}
             </div>
           </div>
 
-          <div className="text-muted-foreground flex shrink-0 items-start gap-3 pt-0.5 text-sm sm:items-center sm:gap-3">
+          <div className="text-muted-foreground flex shrink-0 items-start gap-3 pt-0.5 text-sm sm:items-center sm:gap-4">
             <div className="flex items-center gap-1">
               <MessageSquare className="size-4" />
               <span className="hidden sm:inline">Respostas:</span>
@@ -189,6 +169,24 @@ export function ThreadListItem({
                 </span>
               </div>
             ) : null}
+            <div className="hidden shrink-0 items-center gap-2 sm:flex">
+              <div className="text-muted-foreground min-w-0 text-right text-xs">
+                <div className="truncate">{formatReplyWhen(activityAt)}</div>
+                <UserNameLink
+                  userId={activityUserId}
+                  name={activityName}
+                  className="block truncate font-medium"
+                />
+              </div>
+              <UserAvatarLink
+                userId={activityUserId}
+                name={activityName}
+                avatar={
+                  hasLastReply ? thread.lastPostUserAvatar : thread.userAvatar
+                }
+                className="size-8 rounded-sm"
+              />
+            </div>
           </div>
         </div>
       </Card>
