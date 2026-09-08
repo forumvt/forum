@@ -150,6 +150,12 @@ export async function getThreadBySlug(
   return threadRepo.findBySlug(slug);
 }
 
+export async function listPublicSitemapThreads(): Promise<
+  { slug: string; lastModified: Date }[]
+> {
+  return threadRepo.findPublicSitemapEntries();
+}
+
 export async function getThreadForApi(
   slug: string,
 ): Promise<ThreadBySlug | null> {

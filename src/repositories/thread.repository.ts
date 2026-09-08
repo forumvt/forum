@@ -83,6 +83,29 @@ export async function findBySlug(slug: string): Promise<ThreadBySlug | null> {
   return row as ThreadBySlug | null;
 }
 
+export async function findPublicSitemapEntries(
+  limit = 10_000,
+): Promise<{ slug: string; lastModified: Date }[]> {
+  const rows = await db
+    .select({
+      slug: threadTable.slug,
+      lastPostAt: threadTable.lastPostAt,
+      updatedAt: threadTable.updatedAt,
+    })
+    .from(threadTable)
+    .where(isNull(threadTable.deletedAt))
+    .orderBy(desc(threadTable.lastPostAt))
+    .limit(limit);
+
+  return rows.map((row) => ({
+    slug: row.slug,
+    lastModified:
+      row.lastPostAt.getTime() >= row.updatedAt.getTime()
+        ? row.lastPostAt
+        : row.updatedAt,
+  }));
+}
+
 export interface FindManyPaginatedOptions {
   forumId?: string;
   filter: FilterType;

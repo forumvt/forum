@@ -7,12 +7,14 @@ import { PmInboxList } from "@/components/pm-inbox-list";
 import { ThreadsPagination } from "@/components/threads-pagination";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
+import { NOINDEX_ROBOTS } from "@/lib/site";
 import * as pmService from "@/services/pm.service";
 
 const DEFAULT_PER = 20;
 
 export const metadata = {
   title: "Mensagens | VT Forums",
+  robots: NOINDEX_ROBOTS,
 };
 
 async function Inbox({

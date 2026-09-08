@@ -1,4 +1,5 @@
 import { Clock, MessageSquare, ThumbsUp, User } from "lucide-react";
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -26,6 +27,7 @@ import { UserAvatarLink } from "@/components/user-link";
 import { auth } from "@/lib/auth";
 import { isStaff, roleLabel } from "@/lib/permissions";
 import { resolveActor } from "@/lib/session-actor";
+import { NOINDEX_ROBOTS } from "@/lib/site";
 import { cn, formatMemberSince } from "@/lib/utils";
 import * as subscriptionService from "@/services/subscription.service";
 import * as userService from "@/services/user.service";
@@ -55,13 +57,20 @@ export async function generateMetadata({
   params,
 }: {
   params: ProfilePageParams;
-}) {
+}): Promise<Metadata> {
   const { id } = await params;
   const profile = await userService.getProfile(decodeURIComponent(id));
   if (!profile) {
-    return { title: "Usuário não encontrado | VT Forums" };
+    return {
+      title: "Usuário não encontrado | VT Forums",
+      robots: NOINDEX_ROBOTS,
+    };
   }
-  return { title: `${profile.name} | VT Forums` };
+  return {
+    title: `${profile.name} | VT Forums`,
+    description: `Perfil de ${profile.name} no VT Forums.`,
+    alternates: { canonical: `/users/${encodeURIComponent(profile.id)}` },
+  };
 }
 
 function ProfileTabs({
