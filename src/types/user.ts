@@ -16,6 +16,7 @@ export interface UserIdentity {
   postsCount: number;
   likesReceived: number;
   signature: string | null;
+  xp: number;
 }
 
 export interface UserProfile extends UserIdentity {
@@ -27,6 +28,9 @@ export interface UserProfile extends UserIdentity {
   ignoredByMe: boolean;
   isBanned: boolean;
   banReason: string | null;
+  level: number;
+  achievementsUnlocked: number;
+  achievementsTotal: number;
 }
 
 export interface UserThreadItem {

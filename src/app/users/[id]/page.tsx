@@ -1,9 +1,10 @@
-import { Clock, MessageSquare, ThumbsUp, User } from "lucide-react";
+import { Clock, MessageSquare, ThumbsUp, Trophy, User } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+import { ProfileAchievements } from "@/components/profile-achievements";
 import { ProfileSkeleton } from "@/components/profile-skeleton";
 import { ProfileStaffPanel } from "@/components/profile-staff-panel";
 import { ProfileSubscribePanel } from "@/components/profile-subscribe-panel";
@@ -144,6 +145,8 @@ async function ProfileContent({
   );
   if (!profile) notFound();
 
+  const achievements = await userService.getProfileAchievements(profile.id);
+
   const actor = session?.user ? await resolveActor(session.user) : null;
   const isOwnProfile = session?.user?.id === profile.id;
   const threadsResult =
@@ -248,6 +251,30 @@ async function ProfileContent({
                 </dt>
                 <dd className="text-foreground text-lg font-bold tabular-nums">
                   {profile.likesReceived.toLocaleString("pt-BR")}
+                </dd>
+              </div>
+            </dl>
+
+            <dl className="mt-3 grid grid-cols-3 gap-3 sm:max-w-md">
+              <div className="bg-muted/60 rounded-md px-3 py-2 text-center">
+                <dt className="text-muted-foreground text-xs">Level</dt>
+                <dd className="text-foreground text-lg font-bold tabular-nums">
+                  {profile.level}
+                </dd>
+              </div>
+              <div className="bg-muted/60 rounded-md px-3 py-2 text-center">
+                <dt className="text-muted-foreground text-xs">XP</dt>
+                <dd className="text-foreground text-lg font-bold tabular-nums">
+                  {profile.xp.toLocaleString("pt-BR")}
+                </dd>
+              </div>
+              <div className="bg-muted/60 rounded-md px-3 py-2 text-center">
+                <dt className="text-muted-foreground flex items-center justify-center gap-1 text-xs">
+                  <Trophy className="size-3" />
+                  Conquistas
+                </dt>
+                <dd className="text-foreground text-lg font-bold tabular-nums">
+                  {profile.achievementsUnlocked}
                 </dd>
               </div>
             </dl>
@@ -456,6 +483,12 @@ async function ProfileContent({
           />
         </div>
       ) : null}
+
+      <ProfileAchievements
+        achievements={achievements}
+        unlockedCount={profile.achievementsUnlocked}
+        totalCount={profile.achievementsTotal}
+      />
     </>
   );
 }

@@ -19,6 +19,8 @@ export const RATE_LIMITS = {
   authSignIn: { requests: 10, window: "15 m" as const },
   authSignUp: { requests: 3, window: "1 h" as const },
   authForgotPassword: { requests: 3, window: "1 h" as const },
+  gameEvent: { requests: 120, window: "1 m" as const },
+  gameRunStart: { requests: 20, window: "1 h" as const },
 } as const;
 
 export const DUPLICATE_CONTENT_TTL_SECONDS = 300;

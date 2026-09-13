@@ -26,6 +26,7 @@ export const userTable = pgTable("user", {
   signature: text("signature"),
   showSignatures: boolean("show_signatures").notNull().default(true),
   role: roleEnum("role").notNull().default("USER"),
+  xp: integer("xp").notNull().default(0),
   bannedAt: timestamp("banned_at"),
   banReason: text("ban_reason"),
   createdAt: timestamp("created_at")
@@ -433,3 +434,95 @@ export const pmMessageTable = pgTable(
     ),
   }),
 );
+
+export const achievementKindEnum = pgEnum("achievement_kind", [
+  "counter",
+  "state",
+]);
+
+export const gameRunStatusEnum = pgEnum("game_run_status", ["active", "ended"]);
+
+export const achievementTable = pgTable("achievement", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  icon: text("icon").notNull(),
+  event: text("event"),
+  target: integer("target").notNull(),
+  rewardXp: integer("reward_xp").notNull(),
+  kind: achievementKindEnum("kind").notNull().default("counter"),
+  gameSlug: text("game_slug"),
+});
+
+export const userAchievementTable = pgTable(
+  "user_achievement",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    achievementId: text("achievement_id")
+      .notNull()
+      .references(() => achievementTable.id, { onDelete: "cascade" }),
+    progress: integer("progress").notNull().default(0),
+    unlockedAt: timestamp("unlocked_at"),
+  },
+  (t) => ({
+    userAchievementUnique: unique().on(t.userId, t.achievementId),
+    userIdx: index("user_achievement_user_idx").on(t.userId),
+  }),
+);
+
+export const gameRunTable = pgTable(
+  "game_run",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    gameSlug: text("game_slug").notNull(),
+    status: gameRunStatusEnum("status").notNull().default("active"),
+    wave: integer("wave").notNull().default(0),
+    killStreakNoDamage: integer("kill_streak_no_damage").notNull().default(0),
+    damageTakenThisWave: boolean("damage_taken_this_wave")
+      .notNull()
+      .default(false),
+    enemiesKilled: integer("enemies_killed").notNull().default(0),
+    coinsCollected: integer("coins_collected").notNull().default(0),
+    chestsOpened: integer("chests_opened").notNull().default(0),
+    gameStartedCounted: boolean("game_started_counted")
+      .notNull()
+      .default(false),
+    xpAwardedThisRun: integer("xp_awarded_this_run").notNull().default(0),
+    startedAt: timestamp("started_at").notNull().defaultNow(),
+    endedAt: timestamp("ended_at"),
+  },
+  (t) => ({
+    userStatusIdx: index("game_run_user_status_idx").on(t.userId, t.status),
+  }),
+);
+
+export const achievementRelations = relations(achievementTable, ({ many }) => ({
+  userAchievements: many(userAchievementTable),
+}));
+
+export const userAchievementRelations = relations(
+  userAchievementTable,
+  ({ one }) => ({
+    user: one(userTable, {
+      fields: [userAchievementTable.userId],
+      references: [userTable.id],
+    }),
+    achievement: one(achievementTable, {
+      fields: [userAchievementTable.achievementId],
+      references: [achievementTable.id],
+    }),
+  }),
+);
+
+export const gameRunRelations = relations(gameRunTable, ({ one }) => ({
+  user: one(userTable, {
+    fields: [gameRunTable.userId],
+    references: [userTable.id],
+  }),
+}));

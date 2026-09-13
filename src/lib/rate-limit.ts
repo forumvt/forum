@@ -75,6 +75,8 @@ const limitConfigs = {
   authSignIn: RATE_LIMITS.authSignIn,
   authSignUp: RATE_LIMITS.authSignUp,
   authForgotPassword: RATE_LIMITS.authForgotPassword,
+  gameEvent: RATE_LIMITS.gameEvent,
+  gameRunStart: RATE_LIMITS.gameRunStart,
 } as const;
 
 export type RateLimitKind = keyof typeof limitConfigs;

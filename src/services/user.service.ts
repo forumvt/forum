@@ -1,7 +1,10 @@
+import { levelFromXp } from "@/lib/games/level";
 import { roleLabel, toUserRole } from "@/lib/permissions";
 import { excerptStart } from "@/lib/search";
+import * as achievementRepo from "@/repositories/achievement.repository";
 import * as likeRepo from "@/repositories/like.repository";
 import * as userRepo from "@/repositories/user.repository";
+import * as achievementService from "@/services/achievement.service";
 import * as ignoreService from "@/services/ignore.service";
 import * as subscriptionService from "@/services/subscription.service";
 import type {
@@ -39,6 +42,7 @@ export async function getIdentityMap(
       postsCount: threadsCount + repliesCount,
       likesReceived: likeCounts.get(user.id) ?? 0,
       signature: user.signature,
+      xp: user.xp,
     });
   }
 
@@ -52,16 +56,25 @@ export async function getProfile(
   const user = await userRepo.findPublicById(userId);
   if (!user) return null;
 
-  const [threadCounts, replyCounts, likeCounts, subStats, ignoredByMe] =
-    await Promise.all([
-      userRepo.countThreadsByUserIds([userId]),
-      userRepo.countRepliesByUserIds([userId]),
-      likeRepo.findReceivedLikeCounts([userId]),
-      subscriptionService.getSubscriptionStats(userId, viewerId),
-      viewerId && viewerId !== userId
-        ? ignoreService.isIgnoredBy(viewerId, userId)
-        : Promise.resolve(false),
-    ]);
+  const [
+    threadCounts,
+    replyCounts,
+    likeCounts,
+    subStats,
+    ignoredByMe,
+    unlockedCount,
+    catalog,
+  ] = await Promise.all([
+    userRepo.countThreadsByUserIds([userId]),
+    userRepo.countRepliesByUserIds([userId]),
+    likeRepo.findReceivedLikeCounts([userId]),
+    subscriptionService.getSubscriptionStats(userId, viewerId),
+    viewerId && viewerId !== userId
+      ? ignoreService.isIgnoredBy(viewerId, userId)
+      : Promise.resolve(false),
+    achievementRepo.countUnlocked(userId),
+    achievementRepo.listAchievements(),
+  ]);
 
   const threadsCount = threadCounts.get(userId) ?? 0;
   const repliesCount = replyCounts.get(userId) ?? 0;
@@ -75,6 +88,10 @@ export async function getProfile(
     postsCount: threadsCount + repliesCount,
     likesReceived: likeCounts.get(userId) ?? 0,
     signature: user.signature,
+    xp: user.xp,
+    level: levelFromXp(user.xp),
+    achievementsUnlocked: unlockedCount,
+    achievementsTotal: catalog.length,
     threadsCount,
     repliesCount,
     subscriberCount: subStats.subscriberCount,
@@ -84,6 +101,10 @@ export async function getProfile(
     isBanned: Boolean(user.bannedAt),
     banReason: user.banReason,
   };
+}
+
+export async function getProfileAchievements(userId: string) {
+  return achievementService.listForUser(userId);
 }
 
 export async function getPreview(

@@ -9,7 +9,10 @@
     "lint": "eslint src",
     "db:insert-dream-topic": "tsx src/db/insert-dream-topic.ts",
     "db:novotopic.ts": "tsx src/db/novotopic.ts",
-    "db:topico-memorias": "tsx src/db/topico-memorias.ts"
+    "db:topico-memorias": "tsx src/db/topico-memorias.ts",
+    "db:seed-achievements": "tsx src/db/seed-achievements.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
@@ -64,6 +67,7 @@
     "tailwindcss": "^4",
     "tsx": "^4.20.3",
     "tw-animate-css": "^1.3.5",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   }
 }

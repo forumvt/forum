@@ -5,6 +5,7 @@ import {
   Flame,
   Gamepad2,
   Home,
+  Joystick,
   Mail,
   MessageSquare,
   MessageSquareText,
@@ -44,6 +45,7 @@ const mainNav = [
   { title: "Início", icon: Home, url: "/" },
   { title: "Pesquisar", icon: Search, url: "/search" },
   { title: "Fóruns", icon: TvIcon, url: "/forums" },
+  { title: "Jogos", icon: Joystick, url: "/jogos" },
   { title: "Gaming", icon: Gamepad2, url: "/forums/jogos-em-geral" },
   {
     title: "Vale Tudo",
@@ -72,7 +74,8 @@ export function ForumSidebar(props: React.ComponentProps<typeof Sidebar>) {
                   item.url !== "#" &&
                   (pathname === item.url ||
                     (item.url === "/mensagens" &&
-                      pathname.startsWith("/mensagens/")));
+                      pathname.startsWith("/mensagens/")) ||
+                    (item.url === "/jogos" && pathname.startsWith("/jogos")));
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={isActive}>
