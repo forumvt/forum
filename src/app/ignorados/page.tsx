@@ -5,12 +5,14 @@ import { Suspense } from "react";
 import { IgnoredUserList } from "@/components/ignored-user-list";
 import { ThreadsPagination } from "@/components/threads-pagination";
 import { auth } from "@/lib/auth";
+import { NOINDEX_ROBOTS } from "@/lib/site";
 import * as ignoreService from "@/services/ignore.service";
 
 const DEFAULT_PER = 20;
 
 export const metadata = {
   title: "Ignorados | VT Forums",
+  robots: NOINDEX_ROBOTS,
 };
 
 async function IgnoredFeed({

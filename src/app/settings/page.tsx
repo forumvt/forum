@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { Suspense } from "react"
@@ -9,8 +10,14 @@ import { SignatureSettingsForm } from "@/components/signature-settings"
 import { Button } from "@/components/ui/button"
 import { userProfilePath } from "@/lib/app-url"
 import { auth } from "@/lib/auth"
+import { NOINDEX_ROBOTS } from "@/lib/site"
 import * as notificationService from "@/services/notification.service"
 import * as userService from "@/services/user.service"
+
+export const metadata: Metadata = {
+  title: "Configurações | VT Forums",
+  robots: NOINDEX_ROBOTS,
+}
 
 async function SettingsContent() {
   const session = await auth.api.getSession({

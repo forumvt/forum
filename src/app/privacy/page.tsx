@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Política de Privacidade | VT Forums",
   description:
     "Como o VT Forums trata dados pessoais: coleta, uso, cookies e seus direitos.",
+  alternates: { canonical: "/privacy" },
 };
 
 const UPDATED = "22 de março de 2026";

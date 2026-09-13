@@ -1,4 +1,5 @@
 import { Eye, MessageSquare, PlusIcon } from "lucide-react";
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -10,6 +11,7 @@ import { ThreadList, ThreadListItem } from "@/components/thread-list-item";
 import { ThreadsPagination } from "@/components/threads-pagination";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
+import { plainTextExcerpt } from "@/lib/site";
 import * as forumService from "@/services/forum.service";
 import * as threadService from "@/services/thread.service";
 import type { FilterType } from "@/types/filters";
@@ -20,6 +22,32 @@ const DEFAULT_PER = 10;
 interface ForumPageProps {
   params: Promise<{ slug: string }>;
   searchParams?: Promise<{ page?: string; per?: string; filter?: string }>;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const forum = await forumService.getForumBySlug(slug);
+  if (!forum) {
+    return { title: "Fórum não encontrado | VT Forums" };
+  }
+  const description =
+    plainTextExcerpt(forum.description) ||
+    `Discussões em ${forum.title} no VT Forums.`;
+  return {
+    title: `${forum.title} | VT Forums`,
+    description,
+    alternates: { canonical: `/forums/${forum.slug}` },
+    openGraph: {
+      title: `${forum.title} | VT Forums`,
+      description,
+      url: `/forums/${forum.slug}`,
+      type: "website",
+    },
+  };
 }
 
 async function ForumContent({

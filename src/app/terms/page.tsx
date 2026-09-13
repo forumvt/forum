@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Termos de Serviço | VT Forums",
   description:
     "Regras de uso da plataforma VT Forums: cadastro, conteúdo publicado e conduta na comunidade.",
+  alternates: { canonical: "/terms" },
 };
 
 const UPDATED = "22 de março de 2026";

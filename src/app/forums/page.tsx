@@ -1,4 +1,5 @@
 import { Crown, MessageSquare, Zap } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -10,6 +11,13 @@ import { db } from "@/db";
 
 /** Evita pré-render estático no build sem acesso ao Postgres (ex.: CI sem DATABASE_URL). */
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Fóruns | VT Forums",
+  description:
+    "Lista de fóruns do VT Forums: gaming, política, vale-tudo e discórdia.",
+  alternates: { canonical: "/forums" },
+};
 
 const categories: {
   value: "GAMING" | "POLITICA" | "VALE_TUDO";
