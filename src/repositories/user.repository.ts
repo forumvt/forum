@@ -21,6 +21,7 @@ export interface PublicUserRow {
   bannedAt: Date | null;
   banReason: string | null;
   signature: string | null;
+  xp: number;
 }
 
 function uniqueIds(ids: string[]): string[] {
@@ -82,6 +83,7 @@ export async function findPublicById(
       bannedAt: userTable.bannedAt,
       banReason: userTable.banReason,
       signature: userTable.signature,
+      xp: userTable.xp,
     })
     .from(userTable)
     .where(eq(userTable.id, userId))
@@ -105,6 +107,7 @@ export async function findPublicByIds(
       bannedAt: userTable.bannedAt,
       banReason: userTable.banReason,
       signature: userTable.signature,
+      xp: userTable.xp,
     })
     .from(userTable)
     .where(inArray(userTable.id, ids));
@@ -374,4 +377,26 @@ export async function findPublicByNameQuery(
     .limit(limit);
 
   return rows;
+}
+
+export async function getXp(userId: string): Promise<number> {
+  const [row] = await db
+    .select({ xp: userTable.xp })
+    .from(userTable)
+    .where(eq(userTable.id, userId))
+    .limit(1);
+  return row?.xp ?? 0;
+}
+
+export async function addXp(userId: string, amount: number): Promise<number> {
+  if (amount <= 0) return getXp(userId);
+  const [row] = await db
+    .update(userTable)
+    .set({
+      xp: sql`${userTable.xp} + ${amount}`,
+      updatedAt: new Date(),
+    })
+    .where(eq(userTable.id, userId))
+    .returning({ xp: userTable.xp });
+  return row?.xp ?? 0;
 }
