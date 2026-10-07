@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { type ComponentProps,useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
@@ -39,7 +39,13 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function LoginDialog() {
+export function LoginDialog({
+  triggerLabel = "Entrar",
+  triggerVariant = "ghost",
+}: {
+  triggerLabel?: string;
+  triggerVariant?: ComponentProps<typeof Button>["variant"];
+} = {}) {
   const router = useRouter();
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -134,7 +140,7 @@ export function LoginDialog() {
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="ghost">Entrar</Button>
+        <Button variant={triggerVariant}>{triggerLabel}</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
