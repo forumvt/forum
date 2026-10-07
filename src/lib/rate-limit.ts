@@ -77,6 +77,9 @@ const limitConfigs = {
   authForgotPassword: RATE_LIMITS.authForgotPassword,
   gameEvent: RATE_LIMITS.gameEvent,
   gameRunStart: RATE_LIMITS.gameRunStart,
+  musicChat: RATE_LIMITS.musicChat,
+  musicReaction: RATE_LIMITS.musicReaction,
+  musicRoomCreate: RATE_LIMITS.musicRoomCreate,
 } as const;
 
 export type RateLimitKind = keyof typeof limitConfigs;

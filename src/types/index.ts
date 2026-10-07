@@ -41,3 +41,17 @@ export type {
   UserProfileTab,
   UserThreadItem,
 } from "./user";
+export type {
+  DjQueueItem,
+  MusicChatMessage,
+  MusicConnectionStatus,
+  MusicReactionCounts,
+  MusicReactionKind,
+  MusicRealtimeEnvelope,
+  MusicRealtimeEventType,
+  MusicRoomListItem,
+  MusicRoomState,
+  MusicRoomUser,
+  MusicSong,
+  MusicXpAction,
+} from "./music";

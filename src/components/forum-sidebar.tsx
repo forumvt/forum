@@ -9,6 +9,7 @@ import {
   Mail,
   MessageSquare,
   MessageSquareText,
+  Radio,
   Search,
   Settings,
   Shield,
@@ -46,6 +47,7 @@ const mainNav = [
   { title: "Pesquisar", icon: Search, url: "/search" },
   { title: "Fóruns", icon: TvIcon, url: "/forums" },
   { title: "Jogos", icon: Joystick, url: "/jogos" },
+  { title: "Music", icon: Radio, url: "/music" },
   { title: "Gaming", icon: Gamepad2, url: "/forums/jogos-em-geral" },
   {
     title: "Vale Tudo",
@@ -75,7 +77,8 @@ export function ForumSidebar(props: React.ComponentProps<typeof Sidebar>) {
                   (pathname === item.url ||
                     (item.url === "/mensagens" &&
                       pathname.startsWith("/mensagens/")) ||
-                    (item.url === "/jogos" && pathname.startsWith("/jogos")));
+                    (item.url === "/jogos" && pathname.startsWith("/jogos")) ||
+                    (item.url === "/music" && pathname.startsWith("/music")));
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={isActive}>

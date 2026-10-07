@@ -6,6 +6,7 @@ export const COOLDOWN_SECONDS = {
   postReply: 30,
   threadCreate: 60,
   pmSend: 10,
+  musicChat: 2,
 } as const;
 
 export const RATE_LIMITS = {
@@ -21,6 +22,9 @@ export const RATE_LIMITS = {
   authForgotPassword: { requests: 3, window: "1 h" as const },
   gameEvent: { requests: 120, window: "1 m" as const },
   gameRunStart: { requests: 20, window: "1 h" as const },
+  musicChat: { requests: 30, window: "1 m" as const },
+  musicReaction: { requests: 40, window: "1 m" as const },
+  musicRoomCreate: { requests: 5, window: "1 h" as const },
 } as const;
 
 export const DUPLICATE_CONTENT_TTL_SECONDS = 300;

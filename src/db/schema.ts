@@ -526,3 +526,70 @@ export const gameRunRelations = relations(gameRunTable, ({ one }) => ({
     references: [userTable.id],
   }),
 }));
+
+export const musicRoomTable = pgTable(
+  "music_room",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    slug: text("slug").notNull().unique(),
+    description: text("description"),
+    createdByUserId: text("created_by_user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    isPrivate: boolean("is_private").notNull().default(false),
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    activeIdx: index("music_room_active_idx").on(t.isActive, t.createdAt),
+  }),
+);
+
+export const musicRoomHistoryTable = pgTable(
+  "music_room_history",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    roomId: uuid("room_id")
+      .notNull()
+      .references(() => musicRoomTable.id, { onDelete: "cascade" }),
+    songId: text("song_id").notNull(),
+    title: text("title").notNull(),
+    artist: text("artist").notNull(),
+    source: text("source").notNull(),
+    duration: integer("duration").notNull(),
+    djUserId: text("dj_user_id").references(() => userTable.id, {
+      onDelete: "set null",
+    }),
+    playedAt: timestamp("played_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    roomPlayedIdx: index("music_room_history_room_played_idx").on(
+      t.roomId,
+      t.playedAt,
+    ),
+  }),
+);
+
+export const musicRoomRelations = relations(musicRoomTable, ({ one, many }) => ({
+  createdBy: one(userTable, {
+    fields: [musicRoomTable.createdByUserId],
+    references: [userTable.id],
+  }),
+  history: many(musicRoomHistoryTable),
+}));
+
+export const musicRoomHistoryRelations = relations(
+  musicRoomHistoryTable,
+  ({ one }) => ({
+    room: one(musicRoomTable, {
+      fields: [musicRoomHistoryTable.roomId],
+      references: [musicRoomTable.id],
+    }),
+    dj: one(userTable, {
+      fields: [musicRoomHistoryTable.djUserId],
+      references: [userTable.id],
+    }),
+  }),
+);
